@@ -6,12 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AlertTriangle, Plus, X, Save, Search } from 'lucide-react';
+import { AlertTriangle, Plus, X, Save, Search, FileText } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import BehaviorIncidentsReport from '../components/reports/BehaviorIncidentsReport';
 
 export default function BehaviorIncidents() {
   const [showForm, setShowForm] = useState(false);
+  const [showReport, setShowReport] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState({
     student_id: '',
@@ -92,10 +94,16 @@ export default function BehaviorIncidents() {
           <h1 className="text-3xl font-bold text-gray-900">المخالفات السلوكية</h1>
           <p className="text-gray-600 mt-1">تسجيل ومتابعة المخالفات</p>
         </div>
-        <Button onClick={() => setShowForm(true)} className="bg-red-600 hover:bg-red-700">
-          <Plus className="w-5 h-5 ml-2" />
-          تسجيل مخالفة
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setShowReport(true)} variant="outline" className="gap-2">
+            <FileText className="w-5 h-5" />
+            تقرير قابل للطباعة
+          </Button>
+          <Button onClick={() => setShowForm(true)} className="bg-red-600 hover:bg-red-700">
+            <Plus className="w-5 h-5 ml-2" />
+            تسجيل مخالفة
+          </Button>
+        </div>
       </div>
 
       {/* Search */}
@@ -275,9 +283,14 @@ export default function BehaviorIncidents() {
                 </div>
               </form>
             </CardContent>
-          </Card>
-        </div>
-      )}
-    </div>
-  );
-}
+            </Card>
+            </div>
+            )}
+
+            {/* Report Dialog */}
+            {showReport && (
+            <BehaviorIncidentsReport onClose={() => setShowReport(false)} />
+            )}
+            </div>
+            );
+            }
