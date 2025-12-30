@@ -15,12 +15,17 @@ export default function BasicInfoTab() {
   const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState({
     student_id: '',
+    national_id: '',
     full_name: '',
     nationality: 'سعودي',
     birth_date: '',
+    place_of_birth: '',
     grade_level: 'متوسط',
     grade_class: 1,
     class_division: '',
+    residential_address: '',
+    city: '',
+    district: '',
     notes: ''
   });
 
@@ -44,12 +49,17 @@ export default function BasicInfoTab() {
       setEditingStudent(null);
       setFormData({
         student_id: '',
+        national_id: '',
         full_name: '',
         nationality: 'سعودي',
         birth_date: '',
+        place_of_birth: '',
         grade_level: 'متوسط',
         grade_class: 1,
         class_division: '',
+        residential_address: '',
+        city: '',
+        district: '',
         notes: ''
       });
     },
@@ -66,12 +76,17 @@ export default function BasicInfoTab() {
     setEditingStudent(student);
     setFormData({
       student_id: student.student_id,
+      national_id: student.national_id || '',
       full_name: student.full_name,
       nationality: student.nationality || 'سعودي',
       birth_date: student.birth_date || '',
+      place_of_birth: student.place_of_birth || '',
       grade_level: student.grade_level,
       grade_class: student.grade_class,
       class_division: student.class_division || '',
+      residential_address: student.residential_address || '',
+      city: student.city || '',
+      district: student.district || '',
       notes: student.notes || ''
     });
     setShowForm(true);
@@ -177,16 +192,25 @@ export default function BasicInfoTab() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>الاسم الكامل *</Label>
+                    <Label>رقم الهوية / الإقامة</Label>
                     <Input
-                      required
-                      value={formData.full_name}
-                      onChange={(e) => setFormData({...formData, full_name: e.target.value})}
+                      value={formData.national_id}
+                      onChange={(e) => setFormData({...formData, national_id: e.target.value})}
+                      maxLength={10}
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>الاسم الكامل *</Label>
+                  <Input
+                    required
+                    value={formData.full_name}
+                    onChange={(e) => setFormData({...formData, full_name: e.target.value})}
+                  />
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label>الجنسية</Label>
                     <Input
@@ -200,6 +224,13 @@ export default function BasicInfoTab() {
                       type="date"
                       value={formData.birth_date}
                       onChange={(e) => setFormData({...formData, birth_date: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>مكان الميلاد</Label>
+                    <Input
+                      value={formData.place_of_birth}
+                      onChange={(e) => setFormData({...formData, place_of_birth: e.target.value})}
                     />
                   </div>
                 </div>
@@ -237,6 +268,31 @@ export default function BasicInfoTab() {
                     <Input
                       value={formData.class_division}
                       onChange={(e) => setFormData({...formData, class_division: e.target.value})}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>عنوان السكن</Label>
+                  <Input
+                    value={formData.residential_address}
+                    onChange={(e) => setFormData({...formData, residential_address: e.target.value})}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>المدينة</Label>
+                    <Input
+                      value={formData.city}
+                      onChange={(e) => setFormData({...formData, city: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>الحي</Label>
+                    <Input
+                      value={formData.district}
+                      onChange={(e) => setFormData({...formData, district: e.target.value})}
                     />
                   </div>
                 </div>

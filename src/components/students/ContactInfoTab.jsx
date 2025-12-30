@@ -13,6 +13,7 @@ export default function ContactInfoTab() {
   const [contactData, setContactData] = useState({
     guardian_name: '',
     guardian_phone: '',
+    guardian_work_phone: '',
     student_phone: '',
     guardian_email: ''
   });
@@ -39,6 +40,7 @@ export default function ContactInfoTab() {
       setContactData({
         guardian_name: student.guardian_name || '',
         guardian_phone: student.guardian_phone || '',
+        guardian_work_phone: student.guardian_work_phone || '',
         student_phone: student.student_phone || '',
         guardian_email: student.guardian_email || ''
       });
@@ -96,6 +98,15 @@ export default function ContactInfoTab() {
                       value={contactData.guardian_phone}
                       onChange={(e) => setContactData({...contactData, guardian_phone: e.target.value})}
                       placeholder="05xxxxxxxx"
+                      dir="ltr"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>رقم عمل ولي الأمر</Label>
+                    <Input
+                      value={contactData.guardian_work_phone}
+                      onChange={(e) => setContactData({...contactData, guardian_work_phone: e.target.value})}
+                      placeholder="011xxxxxxx"
                       dir="ltr"
                     />
                   </div>
