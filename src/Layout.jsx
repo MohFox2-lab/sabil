@@ -73,7 +73,8 @@ export default function Layout({ children, currentPageName }) {
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-2">
               <Link to={createPageUrl('Dashboard')}>
-                <Button variant={currentPageName === 'Dashboard' ? 'secondary' : 'ghost'} className="text-white hover:bg-emerald-600">
+                <Button variant={currentPageName === 'Dashboard' ? 'secondary' : 'ghost'} className="text-white hover:bg-emerald-600 gap-2">
+                  <Home className="w-5 h-5" />
                   الرئيسية
                 </Button>
               </Link>
