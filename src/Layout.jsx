@@ -48,9 +48,7 @@ export default function Layout({ children, currentPageName }) {
     {
       label: 'شؤون الطلاب',
       icon: Users,
-      items: [
-        { label: 'لائحة المخالفات السلوكية', page: 'MisconductList' }
-      ]
+      page: 'StudentAffairs'
     }
   ];
 
@@ -79,28 +77,41 @@ export default function Layout({ children, currentPageName }) {
                 </Button>
               </Link>
 
-              {menuItems.map((menu, idx) => (
-                <DropdownMenu key={idx}>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="text-white hover:bg-emerald-600 gap-2">
-                      <menu.icon className="w-5 h-5" />
-                      {menu.label}
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    {menu.items.map((item, i) => (
-                      <DropdownMenuItem key={i} className="cursor-pointer" onClick={() => {
-                        if (item.page) {
-                          window.location.href = createPageUrl(item.page);
-                        }
-                      }}>
-                        <item.icon className="w-4 h-4 ml-2" />
-                        {item.label}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ))}
+              {menuItems.map((menu, idx) => {
+                if (menu.page) {
+                  return (
+                    <Link key={idx} to={createPageUrl(menu.page)}>
+                      <Button variant={currentPageName === menu.page ? 'secondary' : 'ghost'} className="text-white hover:bg-emerald-600 gap-2">
+                        <menu.icon className="w-5 h-5" />
+                        {menu.label}
+                      </Button>
+                    </Link>
+                  );
+                }
+                
+                return (
+                  <DropdownMenu key={idx}>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="text-white hover:bg-emerald-600 gap-2">
+                        <menu.icon className="w-5 h-5" />
+                        {menu.label}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      {menu.items.map((item, i) => (
+                        <DropdownMenuItem key={i} className="cursor-pointer" onClick={() => {
+                          if (item.page) {
+                            window.location.href = createPageUrl(item.page);
+                          }
+                        }}>
+                          <item.icon className="w-4 h-4 ml-2" />
+                          {item.label}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                );
+              })}
 
               <Link to={createPageUrl('Students')}>
                 <Button variant={currentPageName === 'Students' ? 'secondary' : 'ghost'} className="text-white hover:bg-emerald-600">
@@ -138,9 +149,9 @@ export default function Layout({ children, currentPageName }) {
                   الطلاب
                 </Button>
               </Link>
-              <Link to={createPageUrl('MisconductList')} className="block">
+              <Link to={createPageUrl('StudentAffairs')} className="block">
                 <Button variant="ghost" className="w-full text-white hover:bg-emerald-600 justify-start">
-                  لائحة المخالفات
+                  شؤون الطلاب
                 </Button>
               </Link>
               <Link to={createPageUrl('Absences')} className="block">

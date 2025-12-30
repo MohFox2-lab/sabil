@@ -7,6 +7,7 @@ import Absences from './pages/Absences';
 import Pledges from './pages/Pledges';
 import Reports from './pages/Reports';
 import StudentTracking from './pages/StudentTracking';
+import StudentAffairs from './pages/StudentAffairs';
 import __Layout from './Layout.jsx';
 
 
@@ -20,6 +21,7 @@ export const PAGES = {
     "Pledges": Pledges,
     "Reports": Reports,
     "StudentTracking": StudentTracking,
+    "StudentAffairs": StudentAffairs,
 }
 
 export const pagesConfig = {
