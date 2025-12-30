@@ -13,7 +13,8 @@ import {
   ClipboardList,
   FileSignature,
   BookOpen,
-  Shield
+  Shield,
+  Home
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
