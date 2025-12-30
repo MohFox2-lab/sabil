@@ -1,18 +1,20 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tantml:react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AlertTriangle, Plus, X, Save, Search, FileText } from 'lucide-react';
+import { AlertTriangle, Plus, X, Save, Search, FileText, ClipboardEdit } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import BehaviorIncidentsReport from '../components/reports/BehaviorIncidentsReport';
+import AdvancedIncidentForm from '../components/incidents/AdvancedIncidentForm';
 
 export default function BehaviorIncidents() {
   const [showForm, setShowForm] = useState(false);
+  const [showAdvancedForm, setShowAdvancedForm] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState({
@@ -99,9 +101,13 @@ export default function BehaviorIncidents() {
             <FileText className="w-5 h-5" />
             تقرير قابل للطباعة
           </Button>
+          <Button onClick={() => setShowAdvancedForm(true)} variant="outline" className="gap-2 bg-blue-50 hover:bg-blue-100 border-blue-300">
+            <ClipboardEdit className="w-5 h-5" />
+            نموذج متقدم
+          </Button>
           <Button onClick={() => setShowForm(true)} className="bg-red-600 hover:bg-red-700">
             <Plus className="w-5 h-5 ml-2" />
-            تسجيل مخالفة
+            تسجيل سريع
           </Button>
         </div>
       </div>
@@ -288,9 +294,26 @@ export default function BehaviorIncidents() {
             </div>
             )}
 
+            {/* Advanced Form Dialog */}
+            {showAdvancedForm && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 p-4 overflow-y-auto">
+                <div className="bg-white rounded-xl w-full max-w-7xl my-8">
+                  <div className="sticky top-0 bg-emerald-600 text-white p-6 flex items-center justify-between rounded-t-xl z-10">
+                    <h2 className="text-2xl font-bold">نموذج تسجيل المخالفات السلوكية - متقدم</h2>
+                    <Button onClick={() => setShowAdvancedForm(false)} variant="ghost" className="text-white hover:bg-emerald-500">
+                      <X className="w-5 h-5" />
+                    </Button>
+                  </div>
+                  <div className="p-6">
+                    <AdvancedIncidentForm onClose={() => setShowAdvancedForm(false)} />
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Report Dialog */}
             {showReport && (
-            <BehaviorIncidentsReport onClose={() => setShowReport(false)} />
+              <BehaviorIncidentsReport onClose={() => setShowReport(false)} />
             )}
             </div>
             );
