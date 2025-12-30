@@ -25,27 +25,27 @@ export default function Students() {
 
       <Tabs defaultValue="basic" className="w-full">
         <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid">
-          <TabsTrigger value="basic" className="gap-2">
+          <TabsTrigger value="basic" className="gap-2 data-[state=active]:bg-blue-500 data-[state=active]:text-white">
             <UserCircle className="w-4 h-4" />
             بيانات أساسية
           </TabsTrigger>
-          <TabsTrigger value="contact" className="gap-2">
+          <TabsTrigger value="contact" className="gap-2 data-[state=active]:bg-emerald-500 data-[state=active]:text-white">
             <Phone className="w-4 h-4" />
             بيانات الاتصال
           </TabsTrigger>
-          <TabsTrigger value="sms" className="gap-2">
+          <TabsTrigger value="sms" className="gap-2 data-[state=active]:bg-purple-500 data-[state=active]:text-white">
             <MessageSquare className="w-4 h-4" />
             نظام الرسائل النصية
           </TabsTrigger>
-          <TabsTrigger value="groups" className="gap-2">
+          <TabsTrigger value="groups" className="gap-2 data-[state=active]:bg-indigo-500 data-[state=active]:text-white">
             <Users className="w-4 h-4" />
             المجموعات والمناوبين
           </TabsTrigger>
-          <TabsTrigger value="reports" className="gap-2">
+          <TabsTrigger value="reports" className="gap-2 data-[state=active]:bg-amber-500 data-[state=active]:text-white">
             <FileText className="w-4 h-4" />
             التقارير
           </TabsTrigger>
-          <TabsTrigger value="exit" className="gap-2 text-red-600">
+          <TabsTrigger value="exit" className="gap-2 data-[state=active]:bg-red-500 data-[state=active]:text-white">
             <LogOut className="w-4 h-4" />
             خروج
           </TabsTrigger>
