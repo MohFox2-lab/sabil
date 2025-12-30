@@ -1,27 +1,27 @@
-import Dashboard from './pages/Dashboard';
-import Students from './pages/Students';
-import MisconductList from './pages/MisconductList';
-import BehaviorIncidents from './pages/BehaviorIncidents';
-import PositiveBehavior from './pages/PositiveBehavior';
 import Absences from './pages/Absences';
+import BehaviorIncidents from './pages/BehaviorIncidents';
+import Dashboard from './pages/Dashboard';
+import MisconductList from './pages/MisconductList';
 import Pledges from './pages/Pledges';
+import PositiveBehavior from './pages/PositiveBehavior';
 import Reports from './pages/Reports';
-import StudentTracking from './pages/StudentTracking';
 import StudentAffairs from './pages/StudentAffairs';
+import StudentTracking from './pages/StudentTracking';
+import Students from './pages/Students';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "Dashboard": Dashboard,
-    "Students": Students,
-    "MisconductList": MisconductList,
-    "BehaviorIncidents": BehaviorIncidents,
-    "PositiveBehavior": PositiveBehavior,
     "Absences": Absences,
+    "BehaviorIncidents": BehaviorIncidents,
+    "Dashboard": Dashboard,
+    "MisconductList": MisconductList,
     "Pledges": Pledges,
+    "PositiveBehavior": PositiveBehavior,
     "Reports": Reports,
-    "StudentTracking": StudentTracking,
     "StudentAffairs": StudentAffairs,
+    "StudentTracking": StudentTracking,
+    "Students": Students,
 }
 
 export const pagesConfig = {

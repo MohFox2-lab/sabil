@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { AlertTriangle, Save, RotateCcw, Info, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, Save, RotateCcw, Info, CheckCircle2, Printer, Calendar as CalendarIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 export default function RegisterIncidentTab() {
@@ -15,11 +15,13 @@ export default function RegisterIncidentTab() {
     student_id: '',
     misconduct_type_id: '',
     date: new Date().toISOString().split('T')[0],
+    day_of_week: '',
     actions_taken: '',
     notes: '',
     procedure_number: 1
   });
   const [showSuccess, setShowSuccess] = useState(false);
+  const [lastIncidentId, setLastIncidentId] = useState(null);
 
   const queryClient = useQueryClient();
 
@@ -50,16 +52,19 @@ export default function RegisterIncidentTab() {
         student_id: student?.student_id
       };
 
-      await base44.entities.BehaviorIncident.create(incidentData);
+      const result = await base44.entities.BehaviorIncident.create(incidentData);
 
       const newScore = Math.max(0, (student.behavior_score || 80) - misconduct.points_deduction);
       await base44.entities.Student.update(student.id, {
         behavior_score: newScore
       });
+
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['incidents'] });
       queryClient.invalidateQueries({ queryKey: ['students'] });
+      setLastIncidentId(result.id);
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
       resetForm();
@@ -71,10 +76,114 @@ export default function RegisterIncidentTab() {
       student_id: '',
       misconduct_type_id: '',
       date: new Date().toISOString().split('T')[0],
+      day_of_week: '',
       actions_taken: '',
       notes: '',
       procedure_number: 1
     });
+  };
+
+  const printIncidentReport = () => {
+    if (!selectedStudent || !selectedMisconduct) {
+      alert('الرجاء اختيار الطالب والمخالفة');
+      return;
+    }
+
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html dir="rtl">
+      <head>
+        <meta charset="UTF-8">
+        <title>محضر مخالفة سلوكية</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 30px; line-height: 1.6; }
+          .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #0d5d4e; padding-bottom: 20px; }
+          .title { font-size: 24px; font-weight: bold; color: #0d5d4e; margin: 10px 0; }
+          table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+          td { border: 1px solid #333; padding: 12px; font-size: 14px; }
+          .label { background-color: #f0f0f0; font-weight: bold; width: 35%; }
+          .notes-box { border: 1px solid #333; padding: 12px; min-height: 80px; margin: 20px 0; }
+          .signatures { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 30px; margin-top: 60px; text-align: center; }
+          .sig-line { margin-top: 60px; border-bottom: 1px solid #333; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div style="font-size: 18px; color: #0d5d4e;">وزارة التعليم - المملكة العربية السعودية</div>
+          <div class="title">محضر ضبط مخالفة سلوكية</div>
+          <div style="font-size: 14px; color: #666;">وفق لائحة قواعد السلوك والمواظبة - الإصدار الخامس 1447هـ</div>
+        </div>
+        
+        <table>
+          <tr>
+            <td class="label">اسم الطالب</td>
+            <td>${selectedStudent.full_name}</td>
+          </tr>
+          <tr>
+            <td class="label">رقم الطالب</td>
+            <td>${selectedStudent.student_id}</td>
+          </tr>
+          <tr>
+            <td class="label">المرحلة / الصف / الفصل</td>
+            <td>${selectedStudent.grade_level} - ${selectedStudent.grade_class}${selectedStudent.class_division}</td>
+          </tr>
+          <tr>
+            <td class="label">تاريخ المخالفة</td>
+            <td>${new Date(formData.date).toLocaleDateString('ar-SA')} ${formData.day_of_week ? `(${formData.day_of_week})` : ''}</td>
+          </tr>
+          <tr>
+            <td class="label">نوع المخالفة</td>
+            <td>${selectedMisconduct.title}</td>
+          </tr>
+          <tr>
+            <td class="label">درجة المخالفة</td>
+            <td>الدرجة ${['الأولى', 'الثانية', 'الثالثة', 'الرابعة', 'الخامسة'][selectedMisconduct.degree - 1]}</td>
+          </tr>
+          <tr>
+            <td class="label">مقدار الحسم من درجات السلوك</td>
+            <td style="font-weight: bold; color: red;">${selectedMisconduct.points_deduction} درجة</td>
+          </tr>
+          <tr>
+            <td class="label">رقم الإجراء</td>
+            <td>الإجراء ${['الأول', 'الثاني', 'الثالث', 'الرابع'][formData.procedure_number - 1]}</td>
+          </tr>
+        </table>
+        
+        <div style="margin: 20px 0;">
+          <div style="font-weight: bold; margin-bottom: 10px;">الملاحظات والإجراءات التربوية المتخذة:</div>
+          <div class="notes-box">${formData.actions_taken || ''}</div>
+        </div>
+
+        ${formData.notes ? `
+          <div style="margin: 20px 0;">
+            <div style="font-weight: bold; margin-bottom: 10px;">ملاحظات إضافية:</div>
+            <div class="notes-box">${formData.notes}</div>
+          </div>
+        ` : ''}
+        
+        <div class="signatures">
+          <div>
+            <p style="font-weight: bold;">ولي أمر الطالب</p>
+            <div class="sig-line"></div>
+            <p style="margin-top: 5px; font-size: 12px;">التوقيع</p>
+          </div>
+          <div>
+            <p style="font-weight: bold;">وكيل شؤون الطلاب</p>
+            <div class="sig-line"></div>
+            <p style="margin-top: 5px; font-size: 12px;">التوقيع</p>
+          </div>
+          <div>
+            <p style="font-weight: bold;">قائد/قائدة المدرسة</p>
+            <div class="sig-line"></div>
+            <p style="margin-top: 5px; font-size: 12px;">التوقيع والختم</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
   };
 
   const handleSubmit = (e) => {
@@ -199,12 +308,28 @@ export default function RegisterIncidentTab() {
                   type="date"
                   required
                   value={formData.date}
-                  onChange={(e) => setFormData({...formData, date: e.target.value})}
+                  onChange={(e) => {
+                    const date = new Date(e.target.value);
+                    const days = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+                    const dayName = days[date.getDay()];
+                    setFormData({...formData, date: e.target.value, day_of_week: dayName});
+                  }}
                   className="text-lg"
                 />
               </div>
 
               <div className="space-y-2">
+                <Label className="text-base font-bold">اليوم</Label>
+                <Input
+                  value={formData.day_of_week}
+                  onChange={(e) => setFormData({...formData, day_of_week: e.target.value})}
+                  placeholder="يتم تعبئته تلقائياً"
+                  className="text-lg bg-gray-50"
+                  readOnly
+                />
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
                 <Label className="text-base font-bold">رقم الإجراء *</Label>
                 <Select
                   value={formData.procedure_number.toString()}
@@ -289,6 +414,16 @@ export default function RegisterIncidentTab() {
               >
                 <RotateCcw className="w-4 h-4 ml-2" />
                 إعادة تعيين
+              </Button>
+              <Button 
+                type="button"
+                variant="outline"
+                onClick={printIncidentReport}
+                disabled={!formData.student_id || !formData.misconduct_type_id}
+                className="flex-1"
+              >
+                <Printer className="w-4 h-4 ml-2" />
+                معاينة المحضر
               </Button>
               <Button 
                 type="submit" 

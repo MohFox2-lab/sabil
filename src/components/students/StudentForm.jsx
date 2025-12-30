@@ -12,6 +12,8 @@ export default function StudentForm({ student, onClose }) {
   const [formData, setFormData] = useState(student || {
     student_id: '',
     full_name: '',
+    nationality: '',
+    birth_date: '',
     grade_level: 'ابتدائي',
     grade_class: 1,
     class_division: 'أ',
@@ -20,6 +22,7 @@ export default function StudentForm({ student, onClose }) {
     attendance_score: 100,
     guardian_name: '',
     guardian_phone: '',
+    student_phone: '',
     guardian_email: '',
     notes: ''
   });
@@ -65,17 +68,35 @@ export default function StudentForm({ student, onClose }) {
                   required
                   value={formData.student_id}
                   onChange={(e) => setFormData({...formData, student_id: e.target.value})}
-                  placeholder="أدخل رقم الطالب"
+                  placeholder="رقم الطالب الوطني"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label>الاسم الكامل *</Label>
+                <Label>الجنسية</Label>
+                <Input
+                  value={formData.nationality}
+                  onChange={(e) => setFormData({...formData, nationality: e.target.value})}
+                  placeholder="سعودي"
+                />
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <Label>الاسم الكامل رباعياً *</Label>
                 <Input
                   required
                   value={formData.full_name}
                   onChange={(e) => setFormData({...formData, full_name: e.target.value})}
-                  placeholder="أدخل الاسم الكامل"
+                  placeholder="الاسم الكامل رباعياً"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>تاريخ الميلاد</Label>
+                <Input
+                  type="date"
+                  value={formData.birth_date}
+                  onChange={(e) => setFormData({...formData, birth_date: e.target.value})}
                 />
               </div>
 
@@ -131,10 +152,19 @@ export default function StudentForm({ student, onClose }) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>رقم الجوال</Label>
+                  <Label>جوال ولي الأمر</Label>
                   <Input
                     value={formData.guardian_phone}
                     onChange={(e) => setFormData({...formData, guardian_phone: e.target.value})}
+                    placeholder="05xxxxxxxx"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>جوال الطالب</Label>
+                  <Input
+                    value={formData.student_phone}
+                    onChange={(e) => setFormData({...formData, student_phone: e.target.value})}
                     placeholder="05xxxxxxxx"
                   />
                 </div>
@@ -145,6 +175,7 @@ export default function StudentForm({ student, onClose }) {
                     type="email"
                     value={formData.guardian_email}
                     onChange={(e) => setFormData({...formData, guardian_email: e.target.value})}
+                    placeholder="example@email.com"
                   />
                 </div>
               </div>
