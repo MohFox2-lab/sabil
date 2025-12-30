@@ -14,7 +14,8 @@ import {
   FileSignature,
   BookOpen,
   Shield,
-  Home
+  Home,
+  AlertTriangle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -49,7 +50,12 @@ export default function Layout({ children, currentPageName }) {
     {
       label: 'شؤون الطلاب',
       icon: Users,
-      page: 'StudentAffairs'
+      items: [
+        { label: 'إعذار الطلاب', page: 'Absences', icon: Calendar },
+        { label: 'التعهدات الخطية', page: 'Pledges', icon: FileSignature },
+        { label: 'المخالفات السلوكية', page: 'BehaviorIncidents', icon: AlertTriangle },
+        { label: 'سجل متابعة الطلاب', page: 'StudentTracking', icon: ClipboardList }
+      ]
     }
   ];
 
