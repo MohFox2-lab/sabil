@@ -226,6 +226,7 @@ export default function Absences() {
 
                 <div className="flex gap-3 pt-4 border-t">
                   <Button type="button" variant="outline" onClick={() => setShowForm(false)} className="flex-1">
+                    <X className="w-4 h-4 ml-2" />
                     إلغاء
                   </Button>
                   <Button type="submit" className="flex-1 bg-amber-600 hover:bg-amber-700">
