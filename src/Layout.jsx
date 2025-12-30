@@ -15,7 +15,9 @@ import {
   BookOpen,
   Shield,
   Home,
-  AlertTriangle
+  AlertTriangle,
+  GraduationCap,
+  Settings
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -132,7 +134,21 @@ export default function Layout({ children, currentPageName }) {
                   التقارير
                 </Button>
               </Link>
-            </nav>
+
+              <Link to={createPageUrl('ExamsManagement')}>
+                <Button variant={currentPageName === 'ExamsManagement' ? 'secondary' : 'ghost'} className="text-white hover:bg-emerald-600 gap-2">
+                  <GraduationCap className="w-5 h-5" />
+                  إدارة الاختبارات
+                </Button>
+              </Link>
+
+              <Link to={createPageUrl('Settings')}>
+                <Button variant={currentPageName === 'Settings' ? 'secondary' : 'ghost'} className="text-white hover:bg-emerald-600 gap-2">
+                  <Settings className="w-5 h-5" />
+                  إعدادات
+                </Button>
+              </Link>
+              </nav>
 
             {/* Mobile Menu Button */}
             <Button 
@@ -173,10 +189,22 @@ export default function Layout({ children, currentPageName }) {
                   التقارير
                 </Button>
               </Link>
-            </div>
-          )}
-        </div>
-      </header>
+              <Link to={createPageUrl('ExamsManagement')} className="block">
+                <Button variant="ghost" className="w-full text-white hover:bg-emerald-600 justify-start gap-2">
+                  <GraduationCap className="w-5 h-5" />
+                  إدارة الاختبارات
+                </Button>
+              </Link>
+              <Link to={createPageUrl('Settings')} className="block">
+                <Button variant="ghost" className="w-full text-white hover:bg-emerald-600 justify-start gap-2">
+                  <Settings className="w-5 h-5" />
+                  إعدادات
+                </Button>
+              </Link>
+              </div>
+              )}
+              </div>
+              </header>
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
