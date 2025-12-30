@@ -57,12 +57,31 @@ export default function StudentDataTab() {
     mutationFn: (id) => base44.entities.Student.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['students'] });
+      resetForm();
     },
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
     saveMutation.mutate(formData);
+  };
+
+  const loadStudent = (student) => {
+    setFormData({
+      student_id: student.student_id || '',
+      full_name: student.full_name || '',
+      nationality: student.nationality || '',
+      birth_date: student.birth_date || '',
+      grade_level: student.grade_level || 'متوسط',
+      grade_class: student.grade_class || 1,
+      class_division: student.class_division || 'أ',
+      guardian_name: student.guardian_name || '',
+      guardian_phone: student.guardian_phone || '',
+      student_phone: student.student_phone || '',
+      guardian_email: student.guardian_email || '',
+      notes: student.notes || ''
+    });
+    setEditingId(student.id);
   };
 
   const resetForm = () => {

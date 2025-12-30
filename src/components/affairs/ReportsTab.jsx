@@ -7,8 +7,6 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { TrendingUp, AlertTriangle, Award, Activity, Printer, FileText } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
 
 export default function ReportsTab() {
   const [selectedStudentForPrint, setSelectedStudentForPrint] = useState('');
