@@ -160,6 +160,14 @@ export default function StudentDetails({ student, onClose }) {
               )}
             </CardContent>
           </Card>
+
+          {/* Close Button */}
+          <div className="flex justify-end pt-4 border-t">
+            <Button onClick={onClose} variant="outline" className="gap-2">
+              <X className="w-4 h-4" />
+              إغلاق
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>

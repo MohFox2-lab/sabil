@@ -194,6 +194,7 @@ export default function StudentForm({ student, onClose }) {
             {/* Actions */}
             <div className="flex gap-3 justify-end pt-4 border-t">
               <Button type="button" variant="outline" onClick={onClose}>
+                <X className="w-4 h-4 ml-2" />
                 إلغاء
               </Button>
               <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700">
