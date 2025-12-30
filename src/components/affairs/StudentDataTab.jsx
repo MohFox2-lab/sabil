@@ -102,24 +102,6 @@ export default function StudentDataTab() {
     setEditingId(null);
   };
 
-  const loadStudent = (student) => {
-    setFormData({
-      student_id: student.student_id || '',
-      full_name: student.full_name || '',
-      nationality: student.nationality || '',
-      birth_date: student.birth_date || '',
-      grade_level: student.grade_level || 'متوسط',
-      grade_class: student.grade_class || 1,
-      class_division: student.class_division || 'أ',
-      guardian_name: student.guardian_name || '',
-      guardian_phone: student.guardian_phone || '',
-      student_phone: student.student_phone || '',
-      guardian_email: student.guardian_email || '',
-      notes: student.notes || ''
-    });
-    setEditingId(student.id);
-  };
-
   const filteredStudents = students.filter(s =>
     s.full_name?.includes(searchTerm) || s.student_id?.includes(searchTerm)
   );
