@@ -142,7 +142,8 @@ export default function Layout({ children, currentPageName }) {
           {mobileMenuOpen && (
             <div className="md:hidden pb-4 space-y-2">
               <Link to={createPageUrl('Dashboard')} className="block">
-                <Button variant="ghost" className="w-full text-white hover:bg-emerald-600 justify-start">
+                <Button variant="ghost" className="w-full text-white hover:bg-emerald-600 justify-start gap-2">
+                  <Home className="w-5 h-5" />
                   الرئيسية
                 </Button>
               </Link>
