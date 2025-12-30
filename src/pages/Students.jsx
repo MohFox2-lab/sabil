@@ -7,14 +7,13 @@ import {
   MessageSquare, 
   Users, 
   LogOut,
-  Award,
-  Calendar,
-  TrendingUp
+  FileText
 } from 'lucide-react';
 import BasicInfoTab from '../components/students/BasicInfoTab';
 import ContactInfoTab from '../components/students/ContactInfoTab';
 import SMSTab from '../components/students/SMSTab';
 import GroupsTab from '../components/students/GroupsTab';
+import StudentReportsTab from '../components/students/StudentReportsTab';
 
 export default function Students() {
   return (
@@ -25,7 +24,7 @@ export default function Students() {
       </div>
 
       <Tabs defaultValue="basic" className="w-full">
-        <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
+        <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid">
           <TabsTrigger value="basic" className="gap-2">
             <UserCircle className="w-4 h-4" />
             بيانات أساسية
@@ -41,6 +40,10 @@ export default function Students() {
           <TabsTrigger value="groups" className="gap-2">
             <Users className="w-4 h-4" />
             المجموعات والمناوبين
+          </TabsTrigger>
+          <TabsTrigger value="reports" className="gap-2">
+            <FileText className="w-4 h-4" />
+            التقارير
           </TabsTrigger>
           <TabsTrigger value="exit" className="gap-2 text-red-600">
             <LogOut className="w-4 h-4" />
@@ -62,6 +65,10 @@ export default function Students() {
 
         <TabsContent value="groups" className="mt-6">
           <GroupsTab />
+        </TabsContent>
+
+        <TabsContent value="reports" className="mt-6">
+          <StudentReportsTab />
         </TabsContent>
 
         <TabsContent value="exit" className="mt-6">
