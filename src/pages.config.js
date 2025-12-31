@@ -10,6 +10,9 @@ import StudentTracking from './pages/StudentTracking';
 import Students from './pages/Students';
 import SMSSystem from './pages/SMSSystem';
 import GroupsSystem from './pages/GroupsSystem';
+import AttendanceRegistration from './pages/AttendanceRegistration';
+import LeaveRequest from './pages/LeaveRequest';
+import CheckOut from './pages/CheckOut';
 import __Layout from './Layout.jsx';
 
 
@@ -26,6 +29,9 @@ export const PAGES = {
     "Students": Students,
     "SMSSystem": SMSSystem,
     "GroupsSystem": GroupsSystem,
+    "AttendanceRegistration": AttendanceRegistration,
+    "LeaveRequest": LeaveRequest,
+    "CheckOut": CheckOut,
 }
 
 export const pagesConfig = {
