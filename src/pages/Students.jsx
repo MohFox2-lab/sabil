@@ -33,7 +33,7 @@ export default function Students() {
           </TabsTrigger>
           <TabsTrigger value="excuse" className="gap-2 bg-white border-2 border-purple-300 text-purple-700 data-[state=active]:bg-purple-500 data-[state=active]:text-white data-[state=active]:border-purple-500 whitespace-nowrap px-3">
             <ClipboardList className="w-4 h-4" />
-            إدارة الاعذار
+            استئذان الطلاب
           </TabsTrigger>
           <TabsTrigger value="reports" className="gap-2 bg-white border-2 border-amber-300 text-amber-700 data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:border-amber-500 whitespace-nowrap px-3">
             <FileText className="w-4 h-4" />
