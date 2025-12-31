@@ -44,9 +44,9 @@ export default function Layout({ children, currentPageName }) {
       label: 'الحضور والانصراف',
       icon: Calendar,
       items: [
-        { label: 'أعذار الطلاب', page: 'Absences' },
-        { label: 'التعهدات الخطية', page: 'Pledges' },
-        { label: 'سجل متابعة الطلاب', page: 'StudentTracking' }
+        { label: 'أعذار الطلاب', page: 'Absences', icon: Calendar },
+        { label: 'التعهدات الخطية', page: 'Pledges', icon: FileSignature },
+        { label: 'سجل متابعة الطلاب', page: 'StudentTracking', icon: ClipboardList }
       ]
     },
     {
@@ -114,7 +114,7 @@ export default function Layout({ children, currentPageName }) {
                             window.location.href = createPageUrl(item.page);
                           }
                         }}>
-                          <item.icon className="w-4 h-4 ml-2" />
+                          {item.icon && <item.icon className="w-4 h-4 ml-2" />}
                           {item.label}
                         </DropdownMenuItem>
                       ))}
