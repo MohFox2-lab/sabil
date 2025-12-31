@@ -154,7 +154,7 @@ export default function AdvancedIncidentForm({ onClose }) {
             </div>
 
             <div className="space-y-2">
-              <Label>القسم</Label>
+              <Label>الشعبة (الفصل)</Label>
               <Input
                 value={formData.class_division}
                 onChange={(e) => setFormData({...formData, class_division: e.target.value})}

@@ -264,7 +264,7 @@ export default function BasicInfoTab() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>الشعبة</Label>
+                    <Label>الشعبة (الفصل)</Label>
                     <Input
                       value={formData.class_division}
                       onChange={(e) => setFormData({...formData, class_division: e.target.value})}
