@@ -44,6 +44,9 @@ export default function Layout({ children, currentPageName }) {
       label: 'الحضور والانصراف',
       icon: Calendar,
       items: [
+        { label: 'تسجيل الحضور', page: 'AttendanceRegistration' },
+        { label: 'الاستئذان', page: 'Absences' },
+        { label: 'تسجيل الخروج', page: 'CheckOut' },
         { label: 'أعذار الطلاب', page: 'Absences' },
         { label: 'التعهدات الخطية', page: 'Pledges' },
         { label: 'سجل متابعة الطلاب', page: 'StudentTracking' }
