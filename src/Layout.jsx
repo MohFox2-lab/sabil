@@ -18,7 +18,10 @@ import {
   AlertTriangle,
   GraduationCap,
   Settings,
-  MessageSquare
+  MessageSquare,
+  CheckCircle,
+  UserCheck,
+  LogOut
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -47,6 +50,9 @@ export default function Layout({ children, currentPageName }) {
       label: 'الحضور والانصراف',
       icon: Calendar,
       items: [
+        { label: 'تسجيل الحضور', page: 'AttendanceRegistration', icon: CheckCircle },
+        { label: 'الاستئذان', page: 'LeaveRequest', icon: UserCheck },
+        { label: 'تسجيل الخروج', page: 'CheckOut', icon: LogOut },
         { label: 'أعذار الطلاب', page: 'Absences', icon: Calendar },
         { label: 'التعهدات الخطية', page: 'Pledges', icon: FileSignature },
         { label: 'سجل متابعة الطلاب', page: 'StudentTracking', icon: ClipboardList }
