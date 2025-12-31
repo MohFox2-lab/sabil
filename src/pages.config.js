@@ -8,6 +8,8 @@ import Reports from './pages/Reports';
 import StudentAffairs from './pages/StudentAffairs';
 import StudentTracking from './pages/StudentTracking';
 import Students from './pages/Students';
+import SMSSystem from './pages/SMSSystem';
+import GroupsSystem from './pages/GroupsSystem';
 import __Layout from './Layout.jsx';
 
 
@@ -22,6 +24,8 @@ export const PAGES = {
     "StudentAffairs": StudentAffairs,
     "StudentTracking": StudentTracking,
     "Students": Students,
+    "SMSSystem": SMSSystem,
+    "GroupsSystem": GroupsSystem,
 }
 
 export const pagesConfig = {

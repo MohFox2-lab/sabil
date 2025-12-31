@@ -4,15 +4,11 @@ import { Card } from '@/components/ui/card';
 import { 
   UserCircle, 
   Phone, 
-  MessageSquare, 
-  Users, 
   LogOut,
   FileText
 } from 'lucide-react';
 import BasicInfoTab from '../components/students/BasicInfoTab';
 import ContactInfoTab from '../components/students/ContactInfoTab';
-import SMSTab from '../components/students/SMSTab';
-import GroupsTab from '../components/students/GroupsTab';
 import StudentReportsTab from '../components/students/StudentReportsTab';
 
 export default function Students() {
@@ -24,7 +20,7 @@ export default function Students() {
       </div>
 
       <Tabs defaultValue="basic" className="w-full">
-        <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid bg-transparent gap-2">
+        <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid bg-transparent gap-2">
           <TabsTrigger value="basic" className="gap-2 bg-white border-2 border-blue-300 text-blue-700 data-[state=active]:bg-blue-500 data-[state=active]:text-white data-[state=active]:border-blue-500 whitespace-nowrap px-3">
             <UserCircle className="w-4 h-4" />
             بيانات أساسية
@@ -32,14 +28,6 @@ export default function Students() {
           <TabsTrigger value="contact" className="gap-2 bg-white border-2 border-emerald-300 text-emerald-700 data-[state=active]:bg-emerald-500 data-[state=active]:text-white data-[state=active]:border-emerald-500 whitespace-nowrap px-3">
             <Phone className="w-4 h-4" />
             بيانات الاتصال
-          </TabsTrigger>
-          <TabsTrigger value="sms" className="gap-2 bg-white border-2 border-purple-300 text-purple-700 data-[state=active]:bg-purple-500 data-[state=active]:text-white data-[state=active]:border-purple-500 whitespace-nowrap px-3 text-xs">
-            <MessageSquare className="w-4 h-4" />
-            نظام الرسائل النصية
-          </TabsTrigger>
-          <TabsTrigger value="groups" className="gap-2 bg-white border-2 border-indigo-300 text-indigo-700 data-[state=active]:bg-indigo-500 data-[state=active]:text-white data-[state=active]:border-indigo-500 whitespace-nowrap px-3 text-xs">
-            <Users className="w-4 h-4" />
-            المجموعات والمناوبين
           </TabsTrigger>
           <TabsTrigger value="reports" className="gap-2 bg-white border-2 border-amber-300 text-amber-700 data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:border-amber-500 whitespace-nowrap px-3">
             <FileText className="w-4 h-4" />
@@ -57,14 +45,6 @@ export default function Students() {
 
         <TabsContent value="contact" className="mt-6">
           <ContactInfoTab />
-        </TabsContent>
-
-        <TabsContent value="sms" className="mt-6">
-          <SMSTab />
-        </TabsContent>
-
-        <TabsContent value="groups" className="mt-6">
-          <GroupsTab />
         </TabsContent>
 
         <TabsContent value="reports" className="mt-6">

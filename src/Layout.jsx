@@ -17,7 +17,8 @@ import {
   Home,
   AlertTriangle,
   GraduationCap,
-  Settings
+  Settings,
+  MessageSquare
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -36,6 +37,8 @@ export default function Layout({ children, currentPageName }) {
       icon: FileText,
       items: [
         { label: 'تحميل أسماء الطلاب', icon: Upload, action: 'import' },
+        { label: 'نظام الرسائل النصية', page: 'SMSSystem', icon: MessageSquare },
+        { label: 'المجموعات والمناوبين', page: 'GroupsSystem', icon: Users },
         { label: 'طباعة', icon: Printer, action: 'print' },
         { label: 'تحميل PDF', icon: Download, action: 'pdf' }
       ]
