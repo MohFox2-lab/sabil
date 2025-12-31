@@ -17,7 +17,10 @@ import {
   Home,
   AlertTriangle,
   GraduationCap,
-  Settings
+  Settings,
+  CheckCircle,
+  LogOut,
+  UserCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -44,12 +47,12 @@ export default function Layout({ children, currentPageName }) {
       label: 'الحضور والانصراف',
       icon: Calendar,
       items: [
-        { label: 'تسجيل الحضور', page: 'AttendanceRegistration' },
-        { label: 'الاستئذان', page: 'Absences' },
-        { label: 'تسجيل الخروج', page: 'CheckOut' },
-        { label: 'أعذار الطلاب', page: 'Absences' },
-        { label: 'التعهدات الخطية', page: 'Pledges' },
-        { label: 'سجل متابعة الطلاب', page: 'StudentTracking' }
+        { label: 'تسجيل الحضور', page: 'AttendanceRegistration', icon: CheckCircle },
+        { label: 'الاستئذان', page: 'Absences', icon: UserCheck },
+        { label: 'تسجيل الخروج', page: 'CheckOut', icon: LogOut },
+        { label: 'أعذار الطلاب', page: 'Absences', icon: Calendar },
+        { label: 'التعهدات الخطية', page: 'Pledges', icon: FileSignature },
+        { label: 'سجل متابعة الطلاب', page: 'StudentTracking', icon: ClipboardList }
       ]
     },
     {
@@ -117,7 +120,7 @@ export default function Layout({ children, currentPageName }) {
                             window.location.href = createPageUrl(item.page);
                           }
                         }}>
-                          <item.icon className="w-4 h-4 ml-2" />
+                          {item.icon && <item.icon className="w-4 h-4 ml-2" />}
                           {item.label}
                         </DropdownMenuItem>
                       ))}
