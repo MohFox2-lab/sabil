@@ -20,7 +20,9 @@ import {
   Settings,
   CheckCircle,
   LogOut,
-  UserCheck
+  UserCheck,
+  MessageSquare,
+  UsersRound
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -40,7 +42,9 @@ export default function Layout({ children, currentPageName }) {
       items: [
         { label: 'تحميل أسماء الطلاب', icon: Upload, action: 'import' },
         { label: 'طباعة', icon: Printer, action: 'print' },
-        { label: 'تحميل PDF', icon: Download, action: 'pdf' }
+        { label: 'تحميل PDF', icon: Download, action: 'pdf' },
+        { label: 'المجموعات والمناوبين', page: 'Students', icon: UsersRound },
+        { label: 'نظام الرسائل النصية', page: 'Students', icon: MessageSquare }
       ]
     },
     {
