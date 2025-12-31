@@ -52,10 +52,7 @@ export default function Layout({ children, currentPageName }) {
       items: [
         { label: 'تسجيل الحضور', page: 'AttendanceRegistration', icon: CheckCircle },
         { label: 'الاستئذان', page: 'LeaveRequest', icon: UserCheck },
-        { label: 'تسجيل الخروج', page: 'CheckOut', icon: LogOut },
-        { label: 'أعذار الطلاب', page: 'Absences', icon: Calendar },
-        { label: 'التعهدات الخطية', page: 'Pledges', icon: FileSignature },
-        { label: 'سجل متابعة الطلاب', page: 'StudentTracking', icon: ClipboardList }
+        { label: 'تسجيل الخروج', page: 'CheckOut', icon: LogOut }
       ]
     },
     {

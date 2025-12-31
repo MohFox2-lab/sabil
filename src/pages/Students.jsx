@@ -6,12 +6,17 @@ import {
   Phone, 
   LogOut,
   FileText,
-  ClipboardList
+  ClipboardList,
+  Calendar,
+  FileSignature
 } from 'lucide-react';
 import BasicInfoTab from '../components/students/BasicInfoTab';
 import ContactInfoTab from '../components/students/ContactInfoTab';
 import StudentReportsTab from '../components/students/StudentReportsTab';
 import ExcuseManagementTab from '../components/students/ExcuseManagementTab';
+import AbsencesTab from '../components/students/AbsencesTab';
+import PledgesTab from '../components/students/PledgesTab';
+import TrackingTab from '../components/students/TrackingTab';
 
 export default function Students() {
   return (
@@ -22,7 +27,7 @@ export default function Students() {
       </div>
 
       <Tabs defaultValue="basic" className="w-full">
-        <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid bg-transparent gap-2">
+        <TabsList className="grid w-full grid-cols-3 md:grid-cols-8 lg:w-auto lg:inline-grid bg-transparent gap-2">
           <TabsTrigger value="basic" className="gap-2 bg-white border-2 border-blue-300 text-blue-700 data-[state=active]:bg-blue-500 data-[state=active]:text-white data-[state=active]:border-blue-500 whitespace-nowrap px-3">
             <UserCircle className="w-4 h-4" />
             بيانات أساسية
@@ -34,6 +39,18 @@ export default function Students() {
           <TabsTrigger value="excuse" className="gap-2 bg-white border-2 border-purple-300 text-purple-700 data-[state=active]:bg-purple-500 data-[state=active]:text-white data-[state=active]:border-purple-500 whitespace-nowrap px-3">
             <ClipboardList className="w-4 h-4" />
             استئذان الطلاب
+          </TabsTrigger>
+          <TabsTrigger value="absences" className="gap-2 bg-white border-2 border-orange-300 text-orange-700 data-[state=active]:bg-orange-500 data-[state=active]:text-white data-[state=active]:border-orange-500 whitespace-nowrap px-3">
+            <Calendar className="w-4 h-4" />
+            أعذار الطلاب
+          </TabsTrigger>
+          <TabsTrigger value="pledges" className="gap-2 bg-white border-2 border-pink-300 text-pink-700 data-[state=active]:bg-pink-500 data-[state=active]:text-white data-[state=active]:border-pink-500 whitespace-nowrap px-3">
+            <FileSignature className="w-4 h-4" />
+            التعهدات الخطية
+          </TabsTrigger>
+          <TabsTrigger value="tracking" className="gap-2 bg-white border-2 border-teal-300 text-teal-700 data-[state=active]:bg-teal-500 data-[state=active]:text-white data-[state=active]:border-teal-500 whitespace-nowrap px-3">
+            <ClipboardList className="w-4 h-4" />
+            سجل متابعة الطلاب
           </TabsTrigger>
           <TabsTrigger value="reports" className="gap-2 bg-white border-2 border-amber-300 text-amber-700 data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:border-amber-500 whitespace-nowrap px-3">
             <FileText className="w-4 h-4" />
@@ -55,6 +72,18 @@ export default function Students() {
 
         <TabsContent value="excuse" className="mt-6">
           <ExcuseManagementTab />
+        </TabsContent>
+
+        <TabsContent value="absences" className="mt-6">
+          <AbsencesTab />
+        </TabsContent>
+
+        <TabsContent value="pledges" className="mt-6">
+          <PledgesTab />
+        </TabsContent>
+
+        <TabsContent value="tracking" className="mt-6">
+          <TrackingTab />
         </TabsContent>
 
         <TabsContent value="reports" className="mt-6">
