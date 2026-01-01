@@ -13,6 +13,8 @@ import SMSSystem from './pages/SMSSystem';
 import StudentAffairs from './pages/StudentAffairs';
 import StudentTracking from './pages/StudentTracking';
 import Students from './pages/Students';
+import ExamsManagement from './pages/ExamsManagement';
+import Settings from './pages/Settings';
 import __Layout from './Layout.jsx';
 
 
@@ -32,6 +34,8 @@ export const PAGES = {
     "StudentAffairs": StudentAffairs,
     "StudentTracking": StudentTracking,
     "Students": Students,
+    "ExamsManagement": ExamsManagement,
+    "Settings": Settings,
 }
 
 export const pagesConfig = {
