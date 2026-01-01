@@ -17,6 +17,7 @@ import ExcuseManagementTab from '../components/students/ExcuseManagementTab';
 import AbsencesTab from '../components/students/AbsencesTab';
 import PledgesTab from '../components/students/PledgesTab';
 import TrackingTab from '../components/students/TrackingTab';
+import SMSShieldTab from '../components/students/SMSShieldTab';
 
 export default function Students() {
   return (
@@ -59,6 +60,10 @@ export default function Students() {
               <FileText className="w-4 h-4" />
               <span className="truncate">التقارير</span>
             </TabsTrigger>
+            <TabsTrigger value="sms-shield" className="gap-2 bg-white border-2 border-indigo-300 text-indigo-700 data-[state=active]:bg-indigo-500 data-[state=active]:text-white data-[state=active]:border-indigo-500 px-3 py-2 text-sm">
+              <FileText className="w-4 h-4" />
+              <span className="truncate">درع الرسائل</span>
+            </TabsTrigger>
             <TabsTrigger value="exit" className="gap-2 bg-white border-2 border-red-300 text-red-700 data-[state=active]:bg-red-500 data-[state=active]:text-white data-[state=active]:border-red-500 px-3 py-2 text-sm">
               <LogOut className="w-4 h-4" />
               <span className="truncate">خروج</span>
@@ -92,6 +97,10 @@ export default function Students() {
 
         <TabsContent value="reports" className="mt-6">
           <StudentReportsTab />
+        </TabsContent>
+
+        <TabsContent value="sms-shield" className="mt-6">
+          <SMSShieldTab />
         </TabsContent>
 
         <TabsContent value="exit" className="mt-6">
