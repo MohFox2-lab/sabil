@@ -27,7 +27,7 @@ export default function Students() {
       </div>
 
       <Tabs defaultValue="basic" className="w-full">
-        <div className="flex flex-col gap-2">
+        <TabsList className="h-auto flex flex-col gap-2 bg-transparent p-0">
           <div className="flex flex-wrap gap-2 justify-center">
             <TabsTrigger value="basic" className="gap-2 bg-white border-2 border-blue-300 text-blue-700 data-[state=active]:bg-blue-500 data-[state=active]:text-white data-[state=active]:border-blue-500 px-3 py-2 text-sm">
               <UserCircle className="w-4 h-4" />
@@ -64,7 +64,7 @@ export default function Students() {
               <span className="truncate">خروج</span>
             </TabsTrigger>
           </div>
-        </div>
+        </TabsList>
 
         <TabsContent value="basic" className="mt-6">
           <BasicInfoTab />
