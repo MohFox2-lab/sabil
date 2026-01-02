@@ -267,6 +267,13 @@ export default function Layout({ children, currentPageName }) {
                   إعدادات
                 </Button>
               </Link>
+
+              <Link to={createPageUrl('ApiDocs')}>
+                <Button variant={currentPageName === 'ApiDocs' ? 'secondary' : 'ghost'} className="text-white hover:bg-emerald-600 gap-2">
+                  <BookOpen className="w-5 h-5" />
+                  توثيق API
+                </Button>
+              </Link>
               </nav>
 
             {/* Mobile Menu Button */}
