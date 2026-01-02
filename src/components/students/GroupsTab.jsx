@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Users, Plus, Save, Edit, Trash, UserPlus } from 'lucide-react';
+import { Users, Plus, Save, Edit, Trash, UserPlus, X } from 'lucide-react';
 
 export default function GroupsTab() {
   const [groupForm, setGroupForm] = useState({
@@ -62,9 +62,9 @@ export default function GroupsTab() {
     }
   };
 
-  const handleEditGroup = () => {
-    if (groups.length > 0) {
-      const groupToEdit = groups[0];
+  const handleEditGroup = (groupId) => {
+    const groupToEdit = groups.find(g => g.id === groupId);
+    if (groupToEdit) {
       setGroupForm({
         name: groupToEdit.groupname,
         driverName: groupToEdit.drivername,
@@ -78,15 +78,26 @@ export default function GroupsTab() {
 
   const handleDeleteGroup = () => {
     if (editingGroupId) {
+      // لا يمكن حذف المجموعات الافتراضية (مجموعة الصباح والمسائية)
+      if (editingGroupId === 1 || editingGroupId === 2) {
+        alert('لا يمكن حذف المجموعات الافتراضية (مجموعة الصباح أو المسائية)');
+        return;
+      }
       setGroups(groups.filter(g => g.id !== editingGroupId));
       setGroupForm({ name: '', driverName: '', driverMobile: '' });
       setEditingGroupId(null);
       alert('تم حذف المجموعة بنجاح');
-    } else if (groups.length > 0) {
+    } else if (groups.length > 2) {
+      // حذف آخر مجموعة فقط إذا لم تكن من المجموعات الافتراضية
+      const lastGroup = groups[groups.length - 1];
+      if (lastGroup.id === 1 || lastGroup.id === 2) {
+        alert('لا يمكن حذف المجموعات الافتراضية');
+        return;
+      }
       setGroups(groups.slice(0, -1));
       alert('تم حذف آخر مجموعة');
     } else {
-      alert('لا توجد مجموعات للحذف');
+      alert('لا يمكن حذف المجموعات الافتراضية');
     }
   };
 
@@ -175,9 +186,9 @@ export default function GroupsTab() {
                   <Save className="w-4 h-4" />
                   حفظ
                 </Button>
-                <Button onClick={handleEditGroup} variant="outline" className="gap-2">
-                  <Edit className="w-4 h-4" />
-                  تعديل
+                <Button onClick={() => setEditingGroupId(null)} variant="outline" className="gap-2" disabled={editingGroupId === null}>
+                  <X className="w-4 h-4" />
+                  إلغاء
                 </Button>
                 <Button onClick={handleDeleteGroup} variant="destructive" className="gap-2">
                   <Trash className="w-4 h-4" />
@@ -203,13 +214,14 @@ export default function GroupsTab() {
                       <th className="text-right p-3 border-l">groupno</th>
                       <th className="text-right p-3 border-l">groupname</th>
                       <th className="text-right p-3 border-l">drivername</th>
-                      <th className="text-right p-3">drivermobile</th>
+                      <th className="text-right p-3 border-l">drivermobile</th>
+                      <th className="text-right p-3">إجراءات</th>
                     </tr>
                   </thead>
                   <tbody>
                     {groups.length === 0 ? (
                       <tr>
-                        <td colSpan="4" className="text-center p-8 text-gray-500">
+                        <td colSpan="5" className="text-center p-8 text-gray-500">
                           لا توجد مجموعات
                         </td>
                       </tr>
@@ -218,8 +230,18 @@ export default function GroupsTab() {
                         <tr key={group.id} className="border-b hover:bg-gray-50">
                           <td className="p-3 border-l">{group.groupno}</td>
                           <td className="p-3 border-l">{group.groupname}</td>
-                          <td className="p-3 border-l">{group.drivername}</td>
-                          <td className="p-3">{group.drivermobile}</td>
+                          <td className="p-3 border-l">{group.drivername || '-'}</td>
+                          <td className="p-3 border-l">{group.drivermobile || '-'}</td>
+                          <td className="p-3">
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={() => handleEditGroup(group.id)}
+                              className="text-blue-600 hover:text-blue-700"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          </td>
                         </tr>
                       ))
                     )}
