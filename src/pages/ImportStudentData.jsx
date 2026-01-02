@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2, Download } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function ImportStudentData() {
@@ -151,11 +151,52 @@ export default function ImportStudentData() {
     importStudents.mutate(file);
   };
 
+  const downloadSampleFile = () => {
+    // بيانات نموذجية
+    const sampleData = [
+      ['student_id', 'full_name', 'grade_level', 'grade_class', 'class_division', 'national_id', 'nationality', 'birth_date', 'guardian_name', 'guardian_phone', 'student_phone', 'city', 'district'],
+      ['1001', 'أحمد محمد العلي', 'متوسط', '1', 'أ', '1234567890', 'سعودي', '2010-05-15', 'محمد علي العلي', '0501234567', '0509876543', 'الرياض', 'النخيل'],
+      ['1002', 'فاطمة عبدالله السالم', 'متوسط', '1', 'أ', '2345678901', 'سعودي', '2010-08-22', 'عبدالله سالم', '0502345678', '0508765432', 'الرياض', 'العليا'],
+      ['1003', 'خالد سعد القحطاني', 'متوسط', '1', 'ب', '3456789012', 'سعودي', '2010-03-10', 'سعد خالد القحطاني', '0503456789', '0507654321', 'الرياض', 'الملقا'],
+      ['1004', 'نورة إبراهيم الدوسري', 'متوسط', '2', 'أ', '4567890123', 'سعودي', '2009-12-05', 'إبراهيم الدوسري', '0504567890', '0506543210', 'الرياض', 'الورود'],
+      ['1005', 'عبدالرحمن يوسف العتيبي', 'متوسط', '2', 'ب', '5678901234', 'سعودي', '2009-07-18', 'يوسف محمد العتيبي', '0505678901', '0505432109', 'الرياض', 'الياسمين'],
+      ['1006', 'سارة حسن المطيري', 'ثانوي', '1', 'أ', '6789012345', 'سعودي', '2008-09-25', 'حسن علي المطيري', '0506789012', '0504321098', 'الرياض', 'الربوة'],
+      ['1007', 'عمر عبدالعزيز الشمري', 'ثانوي', '1', 'ب', '7890123456', 'سعودي', '2008-04-14', 'عبدالعزيز الشمري', '0507890123', '0503210987', 'الرياض', 'المروج'],
+      ['1008', 'مريم فيصل الحربي', 'ابتدائي', '6', 'أ', '8901234567', 'سعودي', '2011-11-30', 'فيصل سعد الحربي', '0508901234', '0502109876', 'الرياض', 'الصحافة'],
+      ['1009', 'سلطان ناصر الغامدي', 'ابتدائي', '6', 'ب', '9012345678', 'سعودي', '2011-06-08', 'ناصر محمد الغامدي', '0509012345', '0501098765', 'الرياض', 'النرجس'],
+      ['1010', 'ريم عبدالله الزهراني', 'متوسط', '3', 'أ', '1023456789', 'سعودي', '2008-02-20', 'عبدالله أحمد الزهراني', '0501123456', '0500987654', 'الرياض', 'الندى']
+    ];
+
+    // تحويل البيانات إلى CSV
+    const csvContent = sampleData.map(row => row.join(',')).join('\n');
+    
+    // إنشاء Blob وتحميل الملف
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'نموذج_بيانات_الطلاب.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-6" dir="rtl">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">تحميل بيانات الطلاب (بيانات أساسية)</h1>
-        <p className="text-gray-600 mt-1">استيراد البيانات الأساسية للطلاب من ملف Excel</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">تحميل بيانات الطلاب (بيانات أساسية)</h1>
+          <p className="text-gray-600 mt-1">استيراد البيانات الأساسية للطلاب من ملف Excel</p>
+        </div>
+        <Button
+          onClick={downloadSampleFile}
+          variant="outline"
+          className="gap-2 bg-green-50 hover:bg-green-100 border-green-300"
+        >
+          <Download className="w-5 h-5" />
+          تحميل ملف نموذجي
+        </Button>
       </div>
 
       {/* Instructions */}
