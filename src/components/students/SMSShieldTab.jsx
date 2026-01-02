@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { base44 } from '@/api/base44Client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,13 +29,47 @@ export default function SMSShieldTab() {
   const [selectedDate, setSelectedDate] = useState(null);
   const [messageService, setMessageService] = useState('sms');
   const [readyMessage, setReadyMessage] = useState('');
+  const [displayedStudents, setDisplayedStudents] = useState([]);
 
-  // Placeholder student data
-  const students = [
-    { id: 1, name: 'أحمد محمد' },
-    { id: 2, name: 'فاطمة علي' },
-    { id: 3, name: 'عمر خالد' },
-  ];
+  const queryClient = useQueryClient();
+
+  const { data: allStudents = [] } = useQuery({
+    queryKey: ['students'],
+    queryFn: () => base44.entities.Student.list(),
+  });
+
+  const { data: templates = [] } = useQuery({
+    queryKey: ['message-templates'],
+    queryFn: () => base44.entities.MessageTemplate.list(),
+  });
+
+  const sendMessageMutation = useMutation({
+    mutationFn: async (data) => {
+      const messages = chosenStudents.map(student => ({
+        message_type: messageService === 'sms' ? 'sms' : 'whatsapp',
+        recipient_type: recipient,
+        student_id: student.student_id,
+        student_name: student.full_name,
+        recipient_phone: recipient === 'parent' ? student.guardian_phone : student.student_phone,
+        message_content: messageText,
+        status: 'sent',
+        scheduled_date: selectedDate ? `2025-12-${selectedDate}` : null,
+        sent_date: new Date().toISOString(),
+        template_name: readyMessage || null,
+        sender_name: 'النظام'
+      }));
+      
+      for (const msg of messages) {
+        await base44.entities.SMSMessage.create(msg);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sms-messages'] });
+      alert(`تم إرسال ${chosenStudents.length} رسالة بنجاح`);
+      setMessageText('');
+      setChosenStudents([]);
+    },
+  });
 
   // Calendar data
   const currentMonth = 'December';
@@ -41,11 +77,13 @@ export default function SMSShieldTab() {
   const daysInMonth = 31;
 
   const handleSelectAll = () => {
-    setSelectedStudents(students.map(s => s.id));
+    const studentsToUse = displayedStudents.length > 0 ? displayedStudents : allStudents;
+    setSelectedStudents(studentsToUse.map(s => s.id));
   };
 
   const handleChooseSelected = () => {
-    const selected = students.filter(s => selectedStudents.includes(s.id));
+    const studentsToUse = displayedStudents.length > 0 ? displayedStudents : allStudents;
+    const selected = studentsToUse.filter(s => selectedStudents.includes(s.id));
     setChosenStudents([...chosenStudents, ...selected.filter(s => !chosenStudents.find(cs => cs.id === s.id))]);
   };
 
@@ -60,11 +98,20 @@ export default function SMSShieldTab() {
   };
 
   const handleShowClass = () => {
-    console.log('عرض الفصل:', gradeText, classText);
+    const filtered = allStudents.filter(student => {
+      const matchGrade = !gradeText || student.grade_class?.toString() === gradeText;
+      const matchClass = !classText || student.class_division?.toLowerCase() === classText.toLowerCase();
+      return matchGrade && matchClass;
+    });
+    setDisplayedStudents(filtered);
   };
 
   const handleSendMessage = () => {
-    console.log('إرسال رسالة:', { messageText, recipient, chosenStudents });
+    if (!messageText || chosenStudents.length === 0) {
+      alert('يرجى إدخال نص الرسالة واختيار الطلاب');
+      return;
+    }
+    sendMessageMutation.mutate();
   };
 
   return (
@@ -86,7 +133,8 @@ export default function SMSShieldTab() {
                   <div className="space-y-2">
                     {chosenStudents.map(student => (
                       <div key={student.id} className="p-2 bg-gray-50 hover:bg-gray-100 rounded">
-                        {student.name}
+                        <div className="font-medium">{student.full_name}</div>
+                        <div className="text-xs text-gray-500">الصف {student.grade_class} - {student.class_division}</div>
                       </div>
                     ))}
                   </div>
@@ -137,7 +185,7 @@ export default function SMSShieldTab() {
                 <CardTitle className="text-lg">اختيار الاسم</CardTitle>
                 <div className="flex items-center gap-2">
                   <Checkbox 
-                    checked={selectedStudents.length === students.length}
+                    checked={selectedStudents.length === (displayedStudents.length > 0 ? displayedStudents : allStudents).length && selectedStudents.length > 0}
                     onCheckedChange={(checked) => {
                       if (checked) {
                         handleSelectAll();
@@ -152,23 +200,30 @@ export default function SMSShieldTab() {
             </CardHeader>
             <CardContent className="p-4 space-y-4">
               <div className="border rounded-lg p-3 bg-white max-h-64 overflow-y-auto">
-                <div className="space-y-2">
-                  {students.map(student => (
-                    <div key={student.id} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded">
-                      <Checkbox 
-                        checked={selectedStudents.includes(student.id)}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setSelectedStudents([...selectedStudents, student.id]);
-                          } else {
-                            setSelectedStudents(selectedStudents.filter(id => id !== student.id));
-                          }
-                        }}
-                      />
-                      <label className="cursor-pointer flex-1">{student.name}</label>
-                    </div>
-                  ))}
-                </div>
+                {(displayedStudents.length > 0 ? displayedStudents : allStudents).length === 0 ? (
+                  <p className="text-center text-gray-500 py-8">لا يوجد طلاب</p>
+                ) : (
+                  <div className="space-y-2">
+                    {(displayedStudents.length > 0 ? displayedStudents : allStudents).map(student => (
+                      <div key={student.id} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded">
+                        <Checkbox 
+                          checked={selectedStudents.includes(student.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedStudents([...selectedStudents, student.id]);
+                            } else {
+                              setSelectedStudents(selectedStudents.filter(id => id !== student.id));
+                            }
+                          }}
+                        />
+                        <label className="cursor-pointer flex-1">
+                          <div>{student.full_name}</div>
+                          <div className="text-xs text-gray-500">الصف {student.grade_class} - {student.class_division}</div>
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-2">
@@ -285,8 +340,12 @@ export default function SMSShieldTab() {
                 </div>
               </div>
 
-              <Button onClick={handleSendMessage} className="w-full bg-green-600 hover:bg-green-700">
-                إرسال
+              <Button 
+                onClick={handleSendMessage} 
+                disabled={sendMessageMutation.isPending}
+                className="w-full bg-green-600 hover:bg-green-700"
+              >
+                {sendMessageMutation.isPending ? 'جاري الإرسال...' : 'إرسال'}
               </Button>
             </CardContent>
           </Card>
@@ -298,15 +357,22 @@ export default function SMSShieldTab() {
               <CardTitle className="text-lg">رسالة جاهزة</CardTitle>
             </CardHeader>
             <CardContent className="p-4">
-              <Select value={readyMessage} onValueChange={setReadyMessage}>
+              <Select value={readyMessage} onValueChange={(value) => {
+                setReadyMessage(value);
+                const template = templates.find(t => t.template_name === value);
+                if (template) {
+                  setMessageText(template.template_content);
+                }
+              }}>
                 <SelectTrigger>
                   <SelectValue placeholder="اختر رسالة جاهزة" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="welcome">رسالة ترحيب</SelectItem>
-                  <SelectItem value="absence">إشعار غياب</SelectItem>
-                  <SelectItem value="misconduct">إشعار مخالفة</SelectItem>
-                  <SelectItem value="excellence">إشعار تميز</SelectItem>
+                  {templates.map(template => (
+                    <SelectItem key={template.id} value={template.template_name}>
+                      {template.template_name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </CardContent>
