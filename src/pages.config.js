@@ -15,6 +15,7 @@ import StudentTracking from './pages/StudentTracking';
 import Students from './pages/Students';
 import ExamsManagement from './pages/ExamsManagement';
 import Settings from './pages/Settings';
+import UsersManagement from './pages/UsersManagement';
 import __Layout from './Layout.jsx';
 
 
@@ -36,6 +37,7 @@ export const PAGES = {
     "Students": Students,
     "ExamsManagement": ExamsManagement,
     "Settings": Settings,
+    "UsersManagement": UsersManagement,
 }
 
 export const pagesConfig = {

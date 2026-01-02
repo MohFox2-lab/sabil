@@ -148,6 +148,13 @@ export default function Layout({ children, currentPageName }) {
                 </Button>
               </Link>
 
+              <Link to={createPageUrl('UsersManagement')}>
+                <Button variant={currentPageName === 'UsersManagement' ? 'secondary' : 'ghost'} className="text-white hover:bg-emerald-600 gap-2">
+                  <Users className="w-5 h-5" />
+                  إدارة المستخدمين
+                </Button>
+              </Link>
+
               <Link to={createPageUrl('Settings')}>
                 <Button variant={currentPageName === 'Settings' ? 'secondary' : 'ghost'} className="text-white hover:bg-emerald-600 gap-2">
                   <Settings className="w-5 h-5" />
@@ -199,6 +206,12 @@ export default function Layout({ children, currentPageName }) {
                 <Button variant="ghost" className="w-full text-white hover:bg-emerald-600 justify-start gap-2">
                   <GraduationCap className="w-5 h-5" />
                   إدارة الاختبارات
+                </Button>
+              </Link>
+              <Link to={createPageUrl('UsersManagement')} className="block">
+                <Button variant="ghost" className="w-full text-white hover:bg-emerald-600 justify-start gap-2">
+                  <Users className="w-5 h-5" />
+                  إدارة المستخدمين
                 </Button>
               </Link>
               <Link to={createPageUrl('Settings')} className="block">
