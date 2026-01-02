@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { AlertTriangle, Plus, X, Save, Search, FileText, ClipboardEdit, Trash2, Edit } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import BehaviorIncidentsReport from '../components/reports/BehaviorIncidentsReport';
 import AdvancedIncidentForm from '../components/incidents/AdvancedIncidentForm';
 
@@ -18,6 +19,7 @@ export default function BehaviorIncidents() {
   const [showReport, setShowReport] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [editingIncident, setEditingIncident] = useState(null);
+  const [selectedIncidents, setSelectedIncidents] = useState([]);
   const [formData, setFormData] = useState({
     student_id: '',
     misconduct_type_id: '',
@@ -117,6 +119,29 @@ export default function BehaviorIncidents() {
     },
   });
 
+  const deleteMultipleIncidents = useMutation({
+    mutationFn: async (incidentIds) => {
+      for (const incidentId of incidentIds) {
+        const incident = incidents.find(i => i.id === incidentId);
+        const student = students.find(s => s.student_id === incident.student_id);
+        
+        await base44.entities.BehaviorIncident.delete(incidentId);
+        
+        if (student) {
+          const newScore = Math.min(100, (student.behavior_score || 0) + incident.points_deducted);
+          await base44.entities.Student.update(student.id, {
+            behavior_score: newScore
+          });
+        }
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['incidents'] });
+      queryClient.invalidateQueries({ queryKey: ['students'] });
+      setSelectedIncidents([]);
+    },
+  });
+
   const handleSubmit = (e) => {
     e.preventDefault();
     createIncident.mutate(formData);
@@ -144,6 +169,32 @@ export default function BehaviorIncidents() {
     }
   };
 
+  const handleSelectAll = (checked) => {
+    if (checked) {
+      setSelectedIncidents(filteredIncidents.map(i => i.id));
+    } else {
+      setSelectedIncidents([]);
+    }
+  };
+
+  const handleSelectIncident = (incidentId, checked) => {
+    if (checked) {
+      setSelectedIncidents([...selectedIncidents, incidentId]);
+    } else {
+      setSelectedIncidents(selectedIncidents.filter(id => id !== incidentId));
+    }
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedIncidents.length === 0) {
+      alert('الرجاء اختيار مخالفات للحذف');
+      return;
+    }
+    if (confirm(`هل أنت متأكد من حذف ${selectedIncidents.length} مخالفة؟ سيتم إرجاع النقاط للطلاب.`)) {
+      deleteMultipleIncidents.mutate(selectedIncidents);
+    }
+  };
+
   const filteredIncidents = incidents.filter(inc =>
     inc.student_name?.includes(searchTerm) || inc.misconduct_title?.includes(searchTerm)
   );
@@ -157,6 +208,16 @@ export default function BehaviorIncidents() {
           <p className="text-gray-600 mt-1">تسجيل ومتابعة المخالفات</p>
         </div>
         <div className="flex gap-2">
+          {selectedIncidents.length > 0 && (
+            <Button 
+              onClick={handleDeleteSelected} 
+              variant="destructive"
+              className="gap-2"
+            >
+              <Trash2 className="w-4 h-4" />
+              حذف المحدد ({selectedIncidents.length})
+            </Button>
+          )}
           <Button onClick={() => setShowReport(true)} variant="outline" className="gap-2">
             <FileText className="w-5 h-5" />
             تقرير قابل للطباعة
@@ -172,17 +233,23 @@ export default function BehaviorIncidents() {
         </div>
       </div>
 
-      {/* Search */}
+      {/* Search & Select All */}
       <Card>
         <CardContent className="p-6">
-          <div className="relative">
-            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <Input
-              placeholder="البحث في المخالفات..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pr-10"
+          <div className="flex items-center gap-4">
+            <Checkbox
+              checked={selectedIncidents.length === filteredIncidents.length && filteredIncidents.length > 0}
+              onCheckedChange={handleSelectAll}
             />
+            <div className="relative flex-1">
+              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Input
+                placeholder="البحث في المخالفات..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pr-10"
+              />
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -192,7 +259,13 @@ export default function BehaviorIncidents() {
         {filteredIncidents.map((incident) => (
           <Card key={incident.id} className="hover:shadow-lg transition-all">
             <CardContent className="p-6">
-              <div className="flex items-start justify-between">
+              <div className="flex items-start gap-4">
+                <Checkbox
+                  checked={selectedIncidents.includes(incident.id)}
+                  onCheckedChange={(checked) => handleSelectIncident(incident.id, checked)}
+                  className="mt-1"
+                />
+                <div className="flex-1 flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <h3 className="text-xl font-bold text-gray-800">{incident.student_name}</h3>
@@ -246,6 +319,7 @@ export default function BehaviorIncidents() {
                       حذف
                     </Button>
                   </div>
+                </div>
                 </div>
               </div>
             </CardContent>
