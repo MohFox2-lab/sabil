@@ -212,18 +212,52 @@ export default function Layout({ children, currentPageName }) {
                           <DropdownMenuItem key={i} className="cursor-pointer" onClick={() => {
                             if (item.page) {
                               navigate(createPageUrl(item.page));
-                            } else if (item.action === 'logout') {
-                              handleLogout();
-                            } else if (item.action === 'show-student-count') {
-                              handleShowStudentCount();
-                            } else if (item.action === 'show-misconduct-count') {
-                              handleShowMisconductCount();
-                            } else if (item.action === 'export-absences') {
-                              handleExportAbsences();
-                            } else if (item.action === 'export-grades') {
-                              handleExportGrades();
-                            } else if (item.action === 'undo-last') {
-                              alert('وظيفة الإرجاع غير متوفرة حالياً');
+                              return;
+                            }
+
+                            switch (item.action) {
+                              case 'logout':
+                                handleLogout();
+                                break;
+
+                              case 'show-student-count':
+                                handleShowStudentCount();
+                                break;
+
+                              case 'show-misconduct-count':
+                                handleShowMisconductCount();
+                                break;
+
+                              case 'export-absences':
+                                handleExportAbsences();
+                                break;
+
+                              case 'export-grades':
+                                handleExportGrades();
+                                break;
+
+                              case 'import':
+                                handleExportStudents();
+                                break;
+
+                              case 'print':
+                                window.print();
+                                break;
+
+                              case 'pdf':
+                                const doc = new jsPDF();
+                                doc.text('تقرير مختصر', 105, 15, { align: 'center' });
+                                doc.text(`عدد الطلاب: ${students.length}`, 20, 30);
+                                doc.text(`عدد المخالفات: ${incidents.length}`, 20, 40);
+                                doc.save(`report-${new Date().toISOString().split('T')[0]}.pdf`);
+                                break;
+
+                              case 'undo-last':
+                                navigate(-1);
+                                break;
+
+                              default:
+                                alert('هذه الوظيفة غير مربوطة بعد');
                             }
                           }}>
                             {item.icon && <item.icon className="w-4 h-4 ml-2" />}
