@@ -130,7 +130,7 @@ export default function Layout({ children, currentPageName }) {
       label: 'ملف',
       icon: FileText,
       items: [
-        { label: 'تحميل أسماء الطلاب', icon: Upload, action: 'import' },
+        { label: 'تحميل بيانات الطلاب (بيانات أساسية)', page: 'ImportStudentData', icon: Upload },
         { label: 'نظام الرسائل النصية', page: 'SMSSystem', icon: MessageSquare },
         { label: 'المجموعات والمناوبين', page: 'GroupsSystem', icon: Users },
         { label: 'توزيع الطلاب على المجموعات', page: 'StudentGroupDistribution', icon: Users },

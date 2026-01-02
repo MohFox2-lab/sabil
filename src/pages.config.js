@@ -17,6 +17,7 @@ import StudentTracking from './pages/StudentTracking';
 import Students from './pages/Students';
 import UsersManagement from './pages/UsersManagement';
 import ApiDocs from './pages/ApiDocs';
+import ImportStudentData from './pages/ImportStudentData';
 import __Layout from './Layout.jsx';
 
 
@@ -40,6 +41,7 @@ export const PAGES = {
     "Students": Students,
     "UsersManagement": UsersManagement,
     "ApiDocs": ApiDocs,
+    "ImportStudentData": ImportStudentData,
 }
 
 export const pagesConfig = {
