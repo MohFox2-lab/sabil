@@ -38,6 +38,20 @@ export default function ImportStudentData() {
             student[header] = values[index];
           }
         });
+        
+        // دمج الأسماء الأربعة لتكوين الاسم الكامل
+        if (student['First name'] && student['Family name']) {
+          const firstName = student['First name'] || '';
+          const secondName = student['Second name'] || '';
+          const thirdName = student['Third name'] || '';
+          const familyName = student['Family name'] || '';
+          student['full_name'] = `${firstName} ${secondName} ${thirdName} ${familyName}`.replace(/\s+/g, ' ').trim();
+        }
+        
+        // تحويل الحقول الوزارية إلى حقول النظام
+        if (student['UserID']) student['student_id'] = student['UserID'];
+        if (student['Identification']) student['national_id'] = student['Identification'];
+        
         if (Object.keys(student).length > 0) {
           students.push(student);
         }
@@ -56,38 +70,53 @@ export default function ImportStudentData() {
 
       for (const studentData of students) {
         try {
-          // التحقق من الحقول الإلزامية الخمسة
-          const requiredFields = ['student_id', 'full_name', 'grade_level', 'grade_class', 'class_division'];
-          const missingFields = requiredFields.filter(field => !studentData[field] || studentData[field].toString().trim() === '');
+          // التحقق من الحقول الإلزامية الوزارية
+          const requiredMinistryFields = ['student_id', 'national_id', 'full_name'];
+          const missingFields = requiredMinistryFields.filter(field => !studentData[field] || studentData[field].toString().trim() === '');
           
           if (missingFields.length > 0) {
             throw new Error(`حقول مطلوبة ناقصة: ${missingFields.join(', ')}`);
           }
 
-          // التأكد من أن grade_class رقم
-          const gradeClass = typeof studentData.grade_class === 'string' 
-            ? parseInt(studentData.grade_class) 
-            : studentData.grade_class;
-
-          if (isNaN(gradeClass) || gradeClass < 1 || gradeClass > 12) {
-            throw new Error('الصف يجب أن يكون رقم من 1 إلى 12');
-          }
-
-          // إنشاء الطالب مع الحقول المتوفرة فقط
+          // إنشاء الطالب مع الحقول المتوفرة
           const studentRecord = {
             student_id: studentData.student_id.toString().trim(),
             full_name: studentData.full_name.toString().trim(),
-            grade_level: studentData.grade_level.toString().trim(),
-            grade_class: gradeClass,
-            class_division: studentData.class_division.toString().trim(),
+            national_id: studentData.national_id.toString().trim(),
             behavior_score: 80,
             attendance_score: 100,
             distinguished_score: 0
           };
+          
+          // إضافة الصف والمرحلة إذا كانت موجودة
+          if (studentData.grade_level && studentData.grade_level.toString().trim()) {
+            studentRecord.grade_level = studentData.grade_level.toString().trim();
+          } else {
+            studentRecord.grade_level = 'متوسط'; // افتراضي
+          }
+          
+          if (studentData.grade_class) {
+            const gradeClass = typeof studentData.grade_class === 'string' 
+              ? parseInt(studentData.grade_class) 
+              : studentData.grade_class;
+            if (!isNaN(gradeClass) && gradeClass >= 1 && gradeClass <= 12) {
+              studentRecord.grade_class = gradeClass;
+            } else {
+              studentRecord.grade_class = 1;
+            }
+          } else {
+            studentRecord.grade_class = 1; // افتراضي
+          }
+          
+          if (studentData.class_division && studentData.class_division.toString().trim()) {
+            studentRecord.class_division = studentData.class_division.toString().trim();
+          } else {
+            studentRecord.class_division = 'أ'; // افتراضي
+          }
 
           // إضافة الحقول الاختيارية فقط إذا كانت موجودة وغير فارغة
-          if (studentData.national_id && studentData.national_id.toString().trim()) 
-            studentRecord.national_id = studentData.national_id.toString().trim();
+          if (studentData['School code'] && studentData['School code'].toString().trim()) 
+            studentRecord.city = studentData['School code'].toString().trim(); // حفظ معرف المدرسة في حقل المدينة مؤقتاً
           if (studentData.nationality && studentData.nationality.toString().trim()) 
             studentRecord.nationality = studentData.nationality.toString().trim();
           if (studentData.birth_date && studentData.birth_date.toString().trim()) 
@@ -152,19 +181,19 @@ export default function ImportStudentData() {
   };
 
   const downloadSampleFile = () => {
-    // بيانات نموذجية
+    // بيانات نموذجية وفق النموذج الوزاري
     const sampleData = [
-      ['student_id', 'full_name', 'grade_level', 'grade_class', 'class_division', 'national_id', 'nationality', 'birth_date', 'guardian_name', 'guardian_phone', 'student_phone', 'city', 'district'],
-      ['1001', 'أحمد محمد العلي', 'متوسط', '1', 'أ', '1234567890', 'سعودي', '2010-05-15', 'محمد علي العلي', '0501234567', '0509876543', 'الرياض', 'النخيل'],
-      ['1002', 'فاطمة عبدالله السالم', 'متوسط', '1', 'أ', '2345678901', 'سعودي', '2010-08-22', 'عبدالله سالم', '0502345678', '0508765432', 'الرياض', 'العليا'],
-      ['1003', 'خالد سعد القحطاني', 'متوسط', '1', 'ب', '3456789012', 'سعودي', '2010-03-10', 'سعد خالد القحطاني', '0503456789', '0507654321', 'الرياض', 'الملقا'],
-      ['1004', 'نورة إبراهيم الدوسري', 'متوسط', '2', 'أ', '4567890123', 'سعودي', '2009-12-05', 'إبراهيم الدوسري', '0504567890', '0506543210', 'الرياض', 'الورود'],
-      ['1005', 'عبدالرحمن يوسف العتيبي', 'متوسط', '2', 'ب', '5678901234', 'سعودي', '2009-07-18', 'يوسف محمد العتيبي', '0505678901', '0505432109', 'الرياض', 'الياسمين'],
-      ['1006', 'سارة حسن المطيري', 'ثانوي', '1', 'أ', '6789012345', 'سعودي', '2008-09-25', 'حسن علي المطيري', '0506789012', '0504321098', 'الرياض', 'الربوة'],
-      ['1007', 'عمر عبدالعزيز الشمري', 'ثانوي', '1', 'ب', '7890123456', 'سعودي', '2008-04-14', 'عبدالعزيز الشمري', '0507890123', '0503210987', 'الرياض', 'المروج'],
-      ['1008', 'مريم فيصل الحربي', 'ابتدائي', '6', 'أ', '8901234567', 'سعودي', '2011-11-30', 'فيصل سعد الحربي', '0508901234', '0502109876', 'الرياض', 'الصحافة'],
-      ['1009', 'سلطان ناصر الغامدي', 'ابتدائي', '6', 'ب', '9012345678', 'سعودي', '2011-06-08', 'ناصر محمد الغامدي', '0509012345', '0501098765', 'الرياض', 'النرجس'],
-      ['1010', 'ريم عبدالله الزهراني', 'متوسط', '3', 'أ', '1023456789', 'سعودي', '2008-02-20', 'عبدالله أحمد الزهراني', '0501123456', '0500987654', 'الرياض', 'الندى']
+      ['UserID', 'School code', 'Identification', 'First name', 'Second name', 'Third name', 'Family name', 'grade_level', 'grade_class', 'class_division'],
+      ['13515195', '53480', '1008810262', 'علي', 'حيي', 'حيي', 'الصنعاني', 'متوسط', '1', 'أ'],
+      ['17305163', '53480', '1089491764', 'عبدالرحمن', 'خيري', 'خيري', 'العصوري', 'متوسط', '1', 'أ'],
+      ['18519179', '53480', '1049581083', 'سلمان', 'سوير', 'سوير', 'البلوي', 'متوسط', '1', 'ب'],
+      ['17245108', '53480', '1085447490', 'عبدالعزيز', 'راشد', 'راشد', 'العتيبي', 'متوسط', '2', 'أ'],
+      ['15678234', '53480', '1098765432', 'فاطمة', 'عبدالله', 'محمد', 'القحطاني', 'متوسط', '2', 'ب'],
+      ['16789345', '53480', '1087654321', 'محمد', 'سعد', 'علي', 'الغامدي', 'متوسط', '3', 'أ'],
+      ['14567890', '53480', '1076543210', 'نورة', 'فهد', 'عبدالعزيز', 'الدوسري', 'ثانوي', '1', 'أ'],
+      ['13456789', '53480', '1065432109', 'خالد', 'يوسف', 'حسن', 'الحربي', 'ثانوي', '1', 'ب'],
+      ['12345678', '53480', '1054321098', 'سارة', 'إبراهيم', 'ناصر', 'الشمري', 'ابتدائي', '6', 'أ'],
+      ['11234567', '53480', '1043210987', 'أحمد', 'مبارك', 'سلطان', 'المطيري', 'ابتدائي', '6', 'ب']
     ];
 
     // تحويل البيانات إلى CSV
@@ -212,32 +241,57 @@ export default function ImportStudentData() {
             <h4 className="font-bold mb-2">الحقول في ملف Excel:</h4>
             
             <div className="bg-blue-50 border-2 border-blue-300 p-4 rounded-lg mb-4">
-              <h5 className="font-bold text-blue-800 mb-2">✅ الحقول الإلزامية (Required) *</h5>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
-                <div className="font-semibold text-blue-700">• رقم الطالب (student_id) *</div>
-                <div className="font-semibold text-blue-700">• الاسم الكامل (full_name) *</div>
-                <div className="font-semibold text-blue-700">• المرحلة (grade_level) *</div>
-                <div className="font-semibold text-blue-700">• الصف (grade_class) *</div>
-                <div className="font-semibold text-blue-700">• الشعبة (class_division) *</div>
+              <h5 className="font-bold text-blue-800 mb-3">✅ الحقول الإلزامية من النموذج الوزاري *</h5>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                <div className="bg-white p-3 rounded border border-blue-200">
+                  <span className="font-bold text-blue-900">UserID</span>
+                  <p className="text-gray-600 text-xs mt-1">الرقم الطالبي (مثال: 13515195)</p>
+                </div>
+                <div className="bg-white p-3 rounded border border-blue-200">
+                  <span className="font-bold text-blue-900">School code</span>
+                  <p className="text-gray-600 text-xs mt-1">معرف المدرسة (مثال: 53480)</p>
+                </div>
+                <div className="bg-white p-3 rounded border border-blue-200">
+                  <span className="font-bold text-blue-900">Identification</span>
+                  <p className="text-gray-600 text-xs mt-1">رقم الهوية (مثال: 1008810262)</p>
+                </div>
+                <div className="bg-white p-3 rounded border border-blue-200">
+                  <span className="font-bold text-blue-900">First name</span>
+                  <p className="text-gray-600 text-xs mt-1">الاسم الأول (مثال: علي)</p>
+                </div>
+                <div className="bg-white p-3 rounded border border-blue-200">
+                  <span className="font-bold text-blue-900">Second name</span>
+                  <p className="text-gray-600 text-xs mt-1">اسم الأب (مثال: حيي)</p>
+                </div>
+                <div className="bg-white p-3 rounded border border-blue-200">
+                  <span className="font-bold text-blue-900">Third name</span>
+                  <p className="text-gray-600 text-xs mt-1">اسم الجد (مثال: حيي)</p>
+                </div>
+                <div className="bg-white p-3 rounded border border-blue-200">
+                  <span className="font-bold text-blue-900">Family name</span>
+                  <p className="text-gray-600 text-xs mt-1">اسم العائلة (مثال: الصنعاني)</p>
+                </div>
               </div>
+              <p className="text-blue-700 font-semibold mt-3 text-sm">
+                💡 سيتم دمج الأسماء الأربعة تلقائياً لتكوين الاسم الكامل
+              </p>
             </div>
 
             <div className="bg-gray-50 p-4 rounded-lg">
               <h5 className="font-bold text-gray-700 mb-2">🟢 الحقول الاختيارية (Optional)</h5>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm text-gray-600">
-                <div>• رقم الهوية (national_id)</div>
+                <div>• المرحلة (grade_level)</div>
+                <div>• الصف (grade_class)</div>
+                <div>• الشعبة (class_division)</div>
                 <div>• الجنسية (nationality)</div>
                 <div>• تاريخ الميلاد (birth_date)</div>
                 <div>• اسم ولي الأمر (guardian_name)</div>
                 <div>• جوال ولي الأمر (guardian_phone)</div>
                 <div>• هاتف العمل (guardian_work_phone)</div>
                 <div>• جوال الطالب (student_phone)</div>
-                <div>• العنوان (residential_address)</div>
-                <div>• المدينة (city)</div>
-                <div>• الحي (district)</div>
               </div>
             </div>
-            <p className="text-red-600 font-semibold mt-3">* لا يمكن الاستيراد بدون الحقول الخمسة الإلزامية</p>
+            <p className="text-red-600 font-semibold mt-3">* الحقول الإلزامية: UserID + School code + Identification + الأسماء الأربعة</p>
           </div>
 
           <Alert>
@@ -245,11 +299,13 @@ export default function ImportStudentData() {
             <AlertDescription>
               <strong>ملاحظات مهمة:</strong>
               <ul className="list-disc mr-6 mt-2 space-y-1">
-                <li>المرحلة يجب أن تكون: ابتدائي أو متوسط أو ثانوي</li>
-                <li>الصف يجب أن يكون رقم من 1 إلى 12</li>
+                <li><strong>النموذج متوافق مع ملف وزارة التعليم</strong></li>
+                <li>الاسم الكامل = الاسم الأول + اسم الأب + اسم الجد + اسم العائلة</li>
+                <li>الرقم الطالبي (UserID) سيكون رقم الطالب في النظام (student_id)</li>
+                <li>رقم الهوية (Identification) سيتم حفظه كـ (national_id)</li>
+                <li>معرف المدرسة (School code) ثابت لجميع طلاب نفس المدرسة</li>
                 <li>صيغة الملف: Excel (.xlsx, .xls) أو CSV</li>
-                <li><strong>يمكن الاستيراد بالحقول الخمسة الإلزامية فقط</strong></li>
-                <li>الحقول الاختيارية يمكن تركها فارغة واستكمالها لاحقاً</li>
+                <li>إذا لم يتم إدخال الصف والشعبة، سيتم تعيين قيم افتراضية</li>
                 <li>سيتم تهيئة الدرجات الافتراضية: سلوك 80، مواظبة 100، تميز 0</li>
               </ul>
             </AlertDescription>
