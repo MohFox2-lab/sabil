@@ -19,7 +19,9 @@ export default function GroupsTab() {
     { id: 2, groupno: 2, groupname: 'مجموعة المسائية', drivername: '', drivermobile: '' }
   ]);
 
+  const [editingGroupId, setEditingGroupId] = useState(null);
   const [supervisors, setSupervisors] = useState([]);
+  const [groupMembers, setGroupMembers] = useState({});
   const [selectedGroup, setSelectedGroup] = useState('');
   const [selectedDay, setSelectedDay] = useState('');
   const [selectedStudents, setSelectedStudents] = useState([]);
@@ -39,15 +41,91 @@ export default function GroupsTab() {
       };
       setGroups([...groups, newGroup]);
       setGroupForm({ name: '', driverName: '', driverMobile: '' });
+      alert('تم إضافة المجموعة بنجاح');
+    } else {
+      alert('الرجاء إدخال اسم المجموعة');
+    }
+  };
+
+  const handleSaveGroup = () => {
+    if (editingGroupId && groupForm.name) {
+      setGroups(groups.map(g => 
+        g.id === editingGroupId 
+          ? { ...g, groupname: groupForm.name, drivername: groupForm.driverName, drivermobile: groupForm.driverMobile }
+          : g
+      ));
+      setGroupForm({ name: '', driverName: '', driverMobile: '' });
+      setEditingGroupId(null);
+      alert('تم حفظ التعديلات بنجاح');
+    } else {
+      alert('الرجاء اختيار مجموعة للتعديل');
+    }
+  };
+
+  const handleEditGroup = () => {
+    if (groups.length > 0) {
+      const groupToEdit = groups[0];
+      setGroupForm({
+        name: groupToEdit.groupname,
+        driverName: groupToEdit.drivername,
+        driverMobile: groupToEdit.drivermobile
+      });
+      setEditingGroupId(groupToEdit.id);
+    } else {
+      alert('لا توجد مجموعات للتعديل');
+    }
+  };
+
+  const handleDeleteGroup = () => {
+    if (editingGroupId) {
+      setGroups(groups.filter(g => g.id !== editingGroupId));
+      setGroupForm({ name: '', driverName: '', driverMobile: '' });
+      setEditingGroupId(null);
+      alert('تم حذف المجموعة بنجاح');
+    } else if (groups.length > 0) {
+      setGroups(groups.slice(0, -1));
+      alert('تم حذف آخر مجموعة');
+    } else {
+      alert('لا توجد مجموعات للحذف');
     }
   };
 
   const handleAddToGroup = () => {
-    console.log('إضافة للمجموعة:', { selectedGroup, selectedDay, selectedStudents });
+    if (!selectedGroup || !selectedDay || selectedStudents.length === 0) {
+      alert('الرجاء اختيار المجموعة واليوم والمعلمين');
+      return;
+    }
+
+    const key = `${selectedGroup}-${selectedDay}`;
+    const currentMembers = groupMembers[key] || [];
+    const newMembers = [...currentMembers, ...selectedStudents];
+    
+    setGroupMembers({
+      ...groupMembers,
+      [key]: newMembers
+    });
+
+    setSelectedStudents([]);
+    alert('تم إضافة المعلمين للمجموعة بنجاح');
   };
 
   const handleRemoveFromGroup = () => {
-    console.log('حذف العضو المحدد');
+    if (!selectedGroup || !selectedDay || selectedStudents.length === 0) {
+      alert('الرجاء اختيار المجموعة واليوم والمعلمين المراد حذفهم');
+      return;
+    }
+
+    const key = `${selectedGroup}-${selectedDay}`;
+    const currentMembers = groupMembers[key] || [];
+    const updatedMembers = currentMembers.filter(id => !selectedStudents.includes(id));
+    
+    setGroupMembers({
+      ...groupMembers,
+      [key]: updatedMembers
+    });
+
+    setSelectedStudents([]);
+    alert('تم حذف المعلمين من المجموعة بنجاح');
   };
 
   return (
@@ -89,19 +167,19 @@ export default function GroupsTab() {
               </div>
 
               <div className="grid grid-cols-2 gap-2">
-                <Button onClick={handleAddGroup} className="bg-green-600 hover:bg-green-700 gap-2">
+                <Button onClick={handleAddGroup} className="bg-green-600 hover:bg-green-700 gap-2" disabled={editingGroupId !== null}>
                   <Plus className="w-4 h-4" />
                   إضافة
                 </Button>
-                <Button className="bg-blue-600 hover:bg-blue-700 gap-2">
+                <Button onClick={handleSaveGroup} className="bg-blue-600 hover:bg-blue-700 gap-2" disabled={editingGroupId === null}>
                   <Save className="w-4 h-4" />
                   حفظ
                 </Button>
-                <Button variant="outline" className="gap-2">
+                <Button onClick={handleEditGroup} variant="outline" className="gap-2">
                   <Edit className="w-4 h-4" />
                   تعديل
                 </Button>
-                <Button variant="destructive" className="gap-2">
+                <Button onClick={handleDeleteGroup} variant="destructive" className="gap-2">
                   <Trash className="w-4 h-4" />
                   حذف
                 </Button>
