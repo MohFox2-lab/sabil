@@ -17,34 +17,34 @@ export default function ImportStudentData() {
       setUploading(true);
       setResult(null);
 
-      // قراءة الملف كـ CSV
-      const text = await file.text();
-      const lines = text.split('\n').filter(line => line.trim());
-      
-      if (lines.length < 2) {
-        throw new Error('الملف فارغ أو لا يحتوي على بيانات');
-      }
+      // رفع الملف
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
 
-      // قراءة الـ headers من السطر الأول
-      const headers = lines[0].split(',').map(h => h.trim());
-
-      // تحويل الصفوف إلى objects
-      const students = [];
-      for (let i = 1; i < lines.length; i++) {
-        const values = lines[i].split(',').map(v => v.trim());
-        const student = {};
-        headers.forEach((header, index) => {
-          if (values[index]) {
-            student[header] = values[index];
+      // استخراج البيانات من جميع الشيتات تلقائياً
+      const extractResult = await base44.integrations.Core.ExtractDataFromUploadedFile({
+        file_url,
+        json_schema: {
+          type: "object",
+          properties: {
+            data: {
+              type: "array",
+              description: "جميع الطلاب من كل الشيتات",
+              items: {
+                type: "object",
+                additionalProperties: true
+              }
+            }
           }
-        });
-
-        if (Object.keys(student).length > 0) {
-          students.push(student);
         }
+      });
+
+      if (extractResult.status === 'error') {
+        throw new Error(extractResult.details || 'فشل في قراءة الملف');
       }
+
+      const students = extractResult.output?.data || [];
       
-      if (students.length === 0) {
+      if (!Array.isArray(students) || students.length === 0) {
         throw new Error('لم يتم العثور على بيانات طلاب في الملف');
       }
 
@@ -295,8 +295,8 @@ export default function ImportStudentData() {
             <AlertDescription>
               <strong>كيفية عمل النظام:</strong>
               <ul className="list-disc mr-6 mt-2 space-y-1">
-                <li><strong>⚠️ يجب حفظ ملف Excel كـ CSV أولاً</strong> من Excel</li>
-                <li>إذا كان الملف يحتوي على شيتات متعددة، احفظ الشيت المطلوب كـ CSV</li>
+                <li><strong>✅ يقبل جميع صيغ Excel</strong> (.xlsx, .xls, .csv)</li>
+                <li><strong>✅ يقرأ جميع الشيتات تلقائياً</strong> ويدمج البيانات</li>
                 <li>النظام <strong>يفهم البيانات تلقائياً</strong> من أسماء الأعمدة</li>
                 <li>يدمج الأسماء المجزأة (الاسم الأول + الأب + الجد + العائلة) تلقائياً</li>
                 <li>الأعمدة الإضافية تُتجاهل ولا تسبب فشل الاستيراد</li>
