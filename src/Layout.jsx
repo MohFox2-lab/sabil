@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from './utils';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
@@ -39,6 +39,7 @@ import jsPDF from 'jspdf';
 
 export default function Layout({ children, currentPageName }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
 
   const { data: students = [] } = useQuery({
     queryKey: ['students'],
@@ -210,7 +211,7 @@ export default function Layout({ children, currentPageName }) {
                         return (
                           <DropdownMenuItem key={i} className="cursor-pointer" onClick={() => {
                             if (item.page) {
-                              window.location.href = createPageUrl(item.page);
+                              navigate(createPageUrl(item.page));
                             } else if (item.action === 'logout') {
                               handleLogout();
                             } else if (item.action === 'show-student-count') {
