@@ -380,31 +380,7 @@ export default function SMSShieldTab() {
         </div>
       </div>
 
-      {/* Bottom Action Bar */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-wrap gap-2 justify-center">
-            <Button variant="outline" className="gap-2">
-              إخراج من النظام
-            </Button>
-            <Button variant="outline" className="gap-2">
-              عدد الطلاب
-            </Button>
-            <Button variant="outline" className="gap-2">
-              عدد المخالفات السلوكية
-            </Button>
-            <Button variant="outline" className="gap-2">
-              إخراج بيانات الغياب
-            </Button>
-            <Button variant="outline" className="gap-2">
-              إخراج درجات الطلاب
-            </Button>
-            <Button variant="outline" className="gap-2">
-              إرجاع من الآخر
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+
 
       {/* Footer Info */}
       <Card className="bg-gray-50">

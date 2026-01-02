@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from './utils';
+import { base44 } from '@/api/base44Client';
+import { useQuery } from '@tanstack/react-query';
 import { 
   FileText, 
   Calendar, 
@@ -21,7 +23,10 @@ import {
   MessageSquare,
   CheckCircle,
   UserCheck,
-  LogOut
+  LogOut,
+  BarChart3,
+  FileDown,
+  Undo2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -29,10 +34,90 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import jsPDF from 'jspdf';
 
 export default function Layout({ children, currentPageName }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const { data: students = [] } = useQuery({
+    queryKey: ['students'],
+    queryFn: () => base44.entities.Student.list(),
+  });
+
+  const { data: incidents = [] } = useQuery({
+    queryKey: ['behavior-incidents'],
+    queryFn: () => base44.entities.BehaviorIncident.list(),
+  });
+
+  const { data: absences = [] } = useQuery({
+    queryKey: ['absences'],
+    queryFn: () => base44.entities.Absence.list(),
+  });
+
+  const handleExportStudents = () => {
+    const dataStr = JSON.stringify(students, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `students-export-${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleShowStudentCount = () => {
+    alert(`عدد الطلاب: ${students.length} طالب/طالبة`);
+  };
+
+  const handleShowMisconductCount = () => {
+    alert(`عدد المخالفات السلوكية: ${incidents.length} مخالفة`);
+  };
+
+  const handleExportAbsences = () => {
+    const csv = [
+      ['اسم الطالب', 'رقم الطالب', 'التاريخ', 'يوجد عذر', 'نوع العذر', 'ملاحظات'],
+      ...absences.map(a => [
+        a.student_name || '',
+        a.student_id || '',
+        a.date || '',
+        a.has_excuse ? 'نعم' : 'لا',
+        a.excuse_type || '',
+        a.notes || ''
+      ])
+    ].map(row => row.join(',')).join('\n');
+
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `absences-export-${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportGrades = () => {
+    const doc = new jsPDF();
+    
+    doc.text('تقرير درجات الطلاب', 105, 20, { align: 'center' });
+    doc.text(`التاريخ: ${new Date().toLocaleDateString('ar-SA')}`, 105, 30, { align: 'center' });
+    
+    let y = 50;
+    students.forEach((student, idx) => {
+      if (y > 270) {
+        doc.addPage();
+        y = 20;
+      }
+      doc.text(`${idx + 1}. ${student.full_name || 'غير محدد'}`, 20, y);
+      doc.text(`السلوك: ${student.behavior_score || 0}`, 80, y);
+      doc.text(`المواظبة: ${student.attendance_score || 0}`, 120, y);
+      doc.text(`التميز: ${student.distinguished_score || 0}`, 160, y);
+      y += 10;
+    });
+
+    doc.save(`grades-report-${new Date().toISOString().split('T')[0]}.pdf`);
+  };
 
   const menuItems = [
     {
@@ -43,7 +128,14 @@ export default function Layout({ children, currentPageName }) {
         { label: 'نظام الرسائل النصية', page: 'SMSSystem', icon: MessageSquare },
         { label: 'المجموعات والمناوبين', page: 'GroupsSystem', icon: Users },
         { label: 'طباعة', icon: Printer, action: 'print' },
-        { label: 'تحميل PDF', icon: Download, action: 'pdf' }
+        { label: 'تحميل PDF', icon: Download, action: 'pdf' },
+        { type: 'separator' },
+        { label: 'إخراج من النظام', icon: FileDown, action: 'export-students' },
+        { label: 'عدد الطلاب', icon: Users, action: 'show-student-count' },
+        { label: 'عدد المخالفات السلوكية', icon: AlertTriangle, action: 'show-misconduct-count' },
+        { label: 'إخراج بيانات الغياب', icon: Calendar, action: 'export-absences' },
+        { label: 'إخراج درجات الطلاب', icon: BarChart3, action: 'export-grades' },
+        { label: 'إرجاع من الآخر', icon: Undo2, action: 'undo-last' }
       ]
     },
     {
@@ -114,16 +206,33 @@ export default function Layout({ children, currentPageName }) {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-56">
-                      {menu.items.map((item, i) => (
-                        <DropdownMenuItem key={i} className="cursor-pointer" onClick={() => {
-                          if (item.page) {
-                            window.location.href = createPageUrl(item.page);
-                          }
-                        }}>
-                          {item.icon && <item.icon className="w-4 h-4 ml-2" />}
-                          {item.label}
-                        </DropdownMenuItem>
-                      ))}
+                      {menu.items.map((item, i) => {
+                        if (item.type === 'separator') {
+                          return <DropdownMenuSeparator key={i} />;
+                        }
+                        return (
+                          <DropdownMenuItem key={i} className="cursor-pointer" onClick={() => {
+                            if (item.page) {
+                              window.location.href = createPageUrl(item.page);
+                            } else if (item.action === 'export-students') {
+                              handleExportStudents();
+                            } else if (item.action === 'show-student-count') {
+                              handleShowStudentCount();
+                            } else if (item.action === 'show-misconduct-count') {
+                              handleShowMisconductCount();
+                            } else if (item.action === 'export-absences') {
+                              handleExportAbsences();
+                            } else if (item.action === 'export-grades') {
+                              handleExportGrades();
+                            } else if (item.action === 'undo-last') {
+                              alert('وظيفة الإرجاع غير متوفرة حالياً');
+                            }
+                          }}>
+                            {item.icon && <item.icon className="w-4 h-4 ml-2" />}
+                            {item.label}
+                          </DropdownMenuItem>
+                        );
+                      })}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 );
