@@ -27,7 +27,7 @@ export default function ImportStudentData() {
 
       // قراءة الـ headers من السطر الأول
       const headers = lines[0].split(',').map(h => h.trim());
-      
+
       // تحويل الصفوف إلى objects
       const students = [];
       for (let i = 1; i < lines.length; i++) {
@@ -38,20 +38,7 @@ export default function ImportStudentData() {
             student[header] = values[index];
           }
         });
-        
-        // دمج الأسماء الأربعة لتكوين الاسم الكامل
-        if (student['First name'] && student['Family name']) {
-          const firstName = student['First name'] || '';
-          const secondName = student['Second name'] || '';
-          const thirdName = student['Third name'] || '';
-          const familyName = student['Family name'] || '';
-          student['full_name'] = `${firstName} ${secondName} ${thirdName} ${familyName}`.replace(/\s+/g, ' ').trim();
-        }
-        
-        // تحويل الحقول الوزارية إلى حقول النظام
-        if (student['UserID']) student['student_id'] = student['UserID'];
-        if (student['Identification']) student['national_id'] = student['Identification'];
-        
+
         if (Object.keys(student).length > 0) {
           students.push(student);
         }
@@ -61,7 +48,16 @@ export default function ImportStudentData() {
         throw new Error('لم يتم العثور على بيانات طلاب في الملف');
       }
 
-      // 3. التحقق من الحقول الإلزامية وإدراج الطلاب
+      // 3. فهم البيانات تلقائياً (Auto-Mapping)
+      const autoMapField = (data, possibleKeys) => {
+        for (const key of possibleKeys) {
+          if (data[key] && data[key].toString().trim()) {
+            return data[key].toString().trim();
+          }
+        }
+        return null;
+      };
+
       const results = {
         success: 0,
         failed: 0,
@@ -70,78 +66,92 @@ export default function ImportStudentData() {
 
       for (const studentData of students) {
         try {
-          // التحقق من الحقول الإلزامية الوزارية
-          const requiredMinistryFields = ['student_id', 'national_id', 'full_name'];
-          const missingFields = requiredMinistryFields.filter(field => !studentData[field] || studentData[field].toString().trim() === '');
-          
-          if (missingFields.length > 0) {
-            throw new Error(`حقول مطلوبة ناقصة: ${missingFields.join(', ')}`);
+          // فهم الحقول الأساسية تلقائياً
+          const studentId = autoMapField(studentData, ['UserID', 'student_id', 'رقم الطالب', 'الرقم الطالبي']);
+          const nationalId = autoMapField(studentData, ['Identification', 'national_id', 'رقم الهوية', 'الهوية']);
+
+          // دمج الأسماء إذا كانت مجزأة
+          let fullName = autoMapField(studentData, ['full_name', 'الاسم الكامل', 'اسم الطالب']);
+          if (!fullName) {
+            const firstName = autoMapField(studentData, ['First name', 'الاسم الأول']) || '';
+            const secondName = autoMapField(studentData, ['Second name', 'اسم الأب']) || '';
+            const thirdName = autoMapField(studentData, ['Third name', 'اسم الجد']) || '';
+            const familyName = autoMapField(studentData, ['Family name', 'اسم العائلة']) || '';
+            fullName = `${firstName} ${secondName} ${thirdName} ${familyName}`.replace(/\s+/g, ' ').trim();
           }
 
-          // إنشاء الطالب مع الحقول المتوفرة
+          // التحقق من وجود بيانات أساسية فقط
+          if (!fullName || fullName.length < 2) {
+            throw new Error('الاسم مطلوب');
+          }
+
+          // إنشاء سجل الطالب
           const studentRecord = {
-            student_id: studentData.student_id.toString().trim(),
-            full_name: studentData.full_name.toString().trim(),
-            national_id: studentData.national_id.toString().trim(),
+            student_id: studentId || `AUTO_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            full_name: fullName,
+            national_id: nationalId || '',
             behavior_score: 80,
             attendance_score: 100,
             distinguished_score: 0
           };
-          
-          // إضافة الصف والمرحلة إذا كانت موجودة
-          if (studentData.grade_level && studentData.grade_level.toString().trim()) {
-            studentRecord.grade_level = studentData.grade_level.toString().trim();
+
+          // إضافة المرحلة والصف والشعبة إذا توفرت
+          const gradeLevel = autoMapField(studentData, ['grade_level', 'المرحلة', 'المستوى']);
+          if (gradeLevel) {
+            studentRecord.grade_level = gradeLevel;
           } else {
-            studentRecord.grade_level = 'متوسط'; // افتراضي
+            studentRecord.grade_level = 'متوسط';
           }
-          
-          if (studentData.grade_class) {
-            const gradeClass = typeof studentData.grade_class === 'string' 
-              ? parseInt(studentData.grade_class) 
-              : studentData.grade_class;
-            if (!isNaN(gradeClass) && gradeClass >= 1 && gradeClass <= 12) {
-              studentRecord.grade_class = gradeClass;
+
+          const gradeClass = autoMapField(studentData, ['grade_class', 'الصف', 'class']);
+          if (gradeClass) {
+            const parsed = parseInt(gradeClass);
+            if (!isNaN(parsed) && parsed >= 1 && parsed <= 12) {
+              studentRecord.grade_class = parsed;
             } else {
               studentRecord.grade_class = 1;
             }
           } else {
-            studentRecord.grade_class = 1; // افتراضي
-          }
-          
-          if (studentData.class_division && studentData.class_division.toString().trim()) {
-            studentRecord.class_division = studentData.class_division.toString().trim();
-          } else {
-            studentRecord.class_division = 'أ'; // افتراضي
+            studentRecord.grade_class = 1;
           }
 
-          // إضافة الحقول الاختيارية فقط إذا كانت موجودة وغير فارغة
-          if (studentData['School code'] && studentData['School code'].toString().trim()) 
-            studentRecord.city = studentData['School code'].toString().trim(); // حفظ معرف المدرسة في حقل المدينة مؤقتاً
-          if (studentData.nationality && studentData.nationality.toString().trim()) 
-            studentRecord.nationality = studentData.nationality.toString().trim();
-          if (studentData.birth_date && studentData.birth_date.toString().trim()) 
-            studentRecord.birth_date = studentData.birth_date.toString().trim();
-          if (studentData.guardian_name && studentData.guardian_name.toString().trim()) 
-            studentRecord.guardian_name = studentData.guardian_name.toString().trim();
-          if (studentData.guardian_phone && studentData.guardian_phone.toString().trim()) 
-            studentRecord.guardian_phone = studentData.guardian_phone.toString().trim();
-          if (studentData.guardian_work_phone && studentData.guardian_work_phone.toString().trim()) 
-            studentRecord.guardian_work_phone = studentData.guardian_work_phone.toString().trim();
-          if (studentData.student_phone && studentData.student_phone.toString().trim()) 
-            studentRecord.student_phone = studentData.student_phone.toString().trim();
-          if (studentData.residential_address && studentData.residential_address.toString().trim()) 
-            studentRecord.residential_address = studentData.residential_address.toString().trim();
-          if (studentData.city && studentData.city.toString().trim()) 
-            studentRecord.city = studentData.city.toString().trim();
-          if (studentData.district && studentData.district.toString().trim()) 
-            studentRecord.district = studentData.district.toString().trim();
+          const classDivision = autoMapField(studentData, ['class_division', 'الشعبة', 'الفصل']);
+          if (classDivision) {
+            studentRecord.class_division = classDivision;
+          } else {
+            studentRecord.class_division = 'أ';
+          }
+
+          // إضافة الحقول الاختيارية
+          const schoolCode = autoMapField(studentData, ['School code', 'معرف المدرسة', 'الرقم الوزاري']);
+          if (schoolCode) studentRecord.city = schoolCode;
+
+          const nationality = autoMapField(studentData, ['nationality', 'الجنسية']);
+          if (nationality) studentRecord.nationality = nationality;
+
+          const birthDate = autoMapField(studentData, ['birth_date', 'تاريخ الميلاد']);
+          if (birthDate) studentRecord.birth_date = birthDate;
+
+          const guardianName = autoMapField(studentData, ['guardian_name', 'اسم ولي الأمر']);
+          if (guardianName) studentRecord.guardian_name = guardianName;
+
+          const guardianPhone = autoMapField(studentData, ['guardian_phone', 'جوال ولي الأمر', 'هاتف ولي الأمر']);
+          if (guardianPhone) studentRecord.guardian_phone = guardianPhone;
+
+          const studentPhone = autoMapField(studentData, ['student_phone', 'جوال الطالب', 'هاتف الطالب']);
+          if (studentPhone) studentRecord.student_phone = studentPhone;
 
           await base44.entities.Student.create(studentRecord);
           results.success++;
         } catch (error) {
           results.failed++;
+          const studentName = studentData['full_name'] || 
+                              `${studentData['First name'] || ''} ${studentData['Family name'] || ''}`.trim() ||
+                              studentData['student_id'] || 
+                              studentData['UserID'] || 
+                              'غير معروف';
           results.errors.push({
-            student: studentData.full_name || studentData.student_id || 'غير معروف',
+            student: studentName,
             error: error.message
           });
         }
@@ -240,73 +250,57 @@ export default function ImportStudentData() {
           <div>
             <h4 className="font-bold mb-2">الحقول في ملف Excel:</h4>
             
-            <div className="bg-blue-50 border-2 border-blue-300 p-4 rounded-lg mb-4">
-              <h5 className="font-bold text-blue-800 mb-3">✅ الحقول الإلزامية من النموذج الوزاري *</h5>
+            <div className="bg-green-50 border-2 border-green-300 p-4 rounded-lg mb-4">
+              <h5 className="font-bold text-green-800 mb-3">🤖 الفهم الذكي التلقائي (Auto-Mapping)</h5>
+              <p className="text-sm text-green-700 mb-3">
+                النظام يفهم الحقول تلقائياً بغض النظر عن ترتيبها أو أسمائها المحددة:
+              </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                <div className="bg-white p-3 rounded border border-blue-200">
-                  <span className="font-bold text-blue-900">UserID</span>
-                  <p className="text-gray-600 text-xs mt-1">الرقم الطالبي (مثال: 13515195)</p>
+                <div className="bg-white p-3 rounded border border-green-200">
+                  <span className="font-bold text-green-900">رقم الطالب</span>
+                  <p className="text-gray-600 text-xs mt-1">UserID أو student_id أو رقم الطالب</p>
                 </div>
-                <div className="bg-white p-3 rounded border border-blue-200">
-                  <span className="font-bold text-blue-900">School code</span>
-                  <p className="text-gray-600 text-xs mt-1">معرف المدرسة (مثال: 53480)</p>
+                <div className="bg-white p-3 rounded border border-green-200">
+                  <span className="font-bold text-green-900">رقم الهوية</span>
+                  <p className="text-gray-600 text-xs mt-1">Identification أو national_id أو رقم الهوية</p>
                 </div>
-                <div className="bg-white p-3 rounded border border-blue-200">
-                  <span className="font-bold text-blue-900">Identification</span>
-                  <p className="text-gray-600 text-xs mt-1">رقم الهوية (مثال: 1008810262)</p>
+                <div className="bg-white p-3 rounded border border-green-200">
+                  <span className="font-bold text-green-900">الاسم</span>
+                  <p className="text-gray-600 text-xs mt-1">اسم واحد أو أربعة أسماء منفصلة</p>
                 </div>
-                <div className="bg-white p-3 rounded border border-blue-200">
-                  <span className="font-bold text-blue-900">First name</span>
-                  <p className="text-gray-600 text-xs mt-1">الاسم الأول (مثال: علي)</p>
-                </div>
-                <div className="bg-white p-3 rounded border border-blue-200">
-                  <span className="font-bold text-blue-900">Second name</span>
-                  <p className="text-gray-600 text-xs mt-1">اسم الأب (مثال: حيي)</p>
-                </div>
-                <div className="bg-white p-3 rounded border border-blue-200">
-                  <span className="font-bold text-blue-900">Third name</span>
-                  <p className="text-gray-600 text-xs mt-1">اسم الجد (مثال: حيي)</p>
-                </div>
-                <div className="bg-white p-3 rounded border border-blue-200">
-                  <span className="font-bold text-blue-900">Family name</span>
-                  <p className="text-gray-600 text-xs mt-1">اسم العائلة (مثال: الصنعاني)</p>
+                <div className="bg-white p-3 rounded border border-green-200">
+                  <span className="font-bold text-green-900">معرف المدرسة</span>
+                  <p className="text-gray-600 text-xs mt-1">School code أو معرف المدرسة (اختياري)</p>
                 </div>
               </div>
-              <p className="text-blue-700 font-semibold mt-3 text-sm">
-                💡 سيتم دمج الأسماء الأربعة تلقائياً لتكوين الاسم الكامل
+              <p className="text-green-700 font-semibold mt-3 text-sm">
+                ✨ فقط تأكد من وجود <strong>اسم الطالب</strong> - باقي البيانات اختيارية
               </p>
             </div>
 
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h5 className="font-bold text-gray-700 mb-2">🟢 الحقول الاختيارية (Optional)</h5>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm text-gray-600">
-                <div>• المرحلة (grade_level)</div>
-                <div>• الصف (grade_class)</div>
-                <div>• الشعبة (class_division)</div>
-                <div>• الجنسية (nationality)</div>
-                <div>• تاريخ الميلاد (birth_date)</div>
-                <div>• اسم ولي الأمر (guardian_name)</div>
-                <div>• جوال ولي الأمر (guardian_phone)</div>
-                <div>• هاتف العمل (guardian_work_phone)</div>
-                <div>• جوال الطالب (student_phone)</div>
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <h5 className="font-bold text-blue-700 mb-2">📝 أمثلة على الأعمدة المقبولة</h5>
+              <div className="grid grid-cols-1 gap-2 text-sm text-blue-800">
+                <div>✓ الأسماء المجزأة: First name, Second name, Third name, Family name</div>
+                <div>✓ الاسم الكامل: full_name أو الاسم الكامل</div>
+                <div>✓ المرحلة: grade_level أو المرحلة أو المستوى</div>
+                <div>✓ الصف: grade_class أو الصف أو class</div>
+                <div>✓ الشعبة: class_division أو الشعبة أو الفصل</div>
               </div>
             </div>
-            <p className="text-red-600 font-semibold mt-3">* الحقول الإلزامية: UserID + School code + Identification + الأسماء الأربعة</p>
           </div>
 
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              <strong>ملاحظات مهمة:</strong>
+              <strong>كيفية عمل النظام:</strong>
               <ul className="list-disc mr-6 mt-2 space-y-1">
-                <li><strong>النموذج متوافق مع ملف وزارة التعليم</strong></li>
-                <li>الاسم الكامل = الاسم الأول + اسم الأب + اسم الجد + اسم العائلة</li>
-                <li>الرقم الطالبي (UserID) سيكون رقم الطالب في النظام (student_id)</li>
-                <li>رقم الهوية (Identification) سيتم حفظه كـ (national_id)</li>
-                <li>معرف المدرسة (School code) ثابت لجميع طلاب نفس المدرسة</li>
-                <li>صيغة الملف: Excel (.xlsx, .xls) أو CSV</li>
-                <li>إذا لم يتم إدخال الصف والشعبة، سيتم تعيين قيم افتراضية</li>
-                <li>سيتم تهيئة الدرجات الافتراضية: سلوك 80، مواظبة 100، تميز 0</li>
+                <li><strong>يقبل أي ملف من نظام نور</strong> - لا توجد قواعد صارمة</li>
+                <li>النظام <strong>يفهم البيانات تلقائياً</strong> من أسماء الأعمدة</li>
+                <li>يدمج الأسماء المجزأة (الاسم الأول + الأب + الجد + العائلة) تلقائياً</li>
+                <li>الأعمدة الإضافية تُتجاهل ولا تسبب فشل الاستيراد</li>
+                <li>البيانات الناقصة تُكمل بقيم افتراضية</li>
+                <li><strong>لن يتم رفض الملف</strong> إلا إذا كان فارغاً أو تالفاً</li>
               </ul>
             </AlertDescription>
           </Alert>
@@ -424,12 +418,12 @@ export default function ImportStudentData() {
                       ))}
                     </div>
                     <div className="mt-4 bg-blue-50 border border-blue-200 p-4 rounded-lg">
-                      <p className="text-sm text-blue-800 font-semibold mb-2">💡 كيفية حل المشكلة:</p>
+                      <p className="text-sm text-blue-800 font-semibold mb-2">💡 نصائح لحل المشاكل:</p>
                       <ul className="text-sm text-blue-700 space-y-1 mr-4">
-                        <li>• تأكد من وجود الحقول الإلزامية الخمسة في ملف Excel</li>
-                        <li>• تأكد من تطابق أسماء الأعمدة مع الحقول المطلوبة بالضبط</li>
-                        <li>• تأكد من عدم ترك الحقول الإلزامية فارغة</li>
-                        <li>• تأكد من أن الصف (grade_class) رقم من 1 إلى 12</li>
+                        <li>• تأكد من وجود عمود للاسم (كامل أو مجزأ)</li>
+                        <li>• تأكد من عدم ترك صفوف الأسماء فارغة تماماً</li>
+                        <li>• النظام يتجاهل البيانات الناقصة ويكملها تلقائياً</li>
+                        <li>• إذا فشل استيراد طالب، تحقق من وجود اسمه في الملف</li>
                       </ul>
                     </div>
                   </div>
