@@ -17,41 +17,34 @@ export default function ImportStudentData() {
       setUploading(true);
       setResult(null);
 
-      // رفع الملف أولاً
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-
-      // استخراج البيانات من ملف Excel
-      const extractResult = await base44.integrations.Core.ExtractDataFromUploadedFile({
-        file_url,
-        json_schema: {
-          type: "object",
-          properties: {
-            students: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  UserID: { type: "string" },
-                  "School code": { type: "string" },
-                  Identification: { type: "string" },
-                  "First name": { type: "string" },
-                  "Second name": { type: "string" },
-                  "Third name": { type: "string" },
-                  "Family name": { type: "string" }
-                }
-              }
-            }
-          }
-        }
-      });
-
-      if (extractResult.status === 'error') {
-        throw new Error(extractResult.details || 'فشل في قراءة الملف');
+      // قراءة الملف كـ CSV
+      const text = await file.text();
+      const lines = text.split('\n').filter(line => line.trim());
+      
+      if (lines.length < 2) {
+        throw new Error('الملف فارغ أو لا يحتوي على بيانات');
       }
 
-      const students = extractResult.output?.students || extractResult.output || [];
+      // قراءة الـ headers من السطر الأول
+      const headers = lines[0].split(',').map(h => h.trim());
+
+      // تحويل الصفوف إلى objects
+      const students = [];
+      for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(',').map(v => v.trim());
+        const student = {};
+        headers.forEach((header, index) => {
+          if (values[index]) {
+            student[header] = values[index];
+          }
+        });
+
+        if (Object.keys(student).length > 0) {
+          students.push(student);
+        }
+      }
       
-      if (!Array.isArray(students) || students.length === 0) {
+      if (students.length === 0) {
         throw new Error('لم يتم العثور على بيانات طلاب في الملف');
       }
 
@@ -302,12 +295,12 @@ export default function ImportStudentData() {
             <AlertDescription>
               <strong>كيفية عمل النظام:</strong>
               <ul className="list-disc mr-6 mt-2 space-y-1">
-                <li><strong>يقبل أي ملف من نظام نور</strong> - لا توجد قواعد صارمة</li>
+                <li><strong>⚠️ يجب حفظ ملف Excel كـ CSV أولاً</strong> من Excel</li>
+                <li>إذا كان الملف يحتوي على شيتات متعددة، احفظ الشيت المطلوب كـ CSV</li>
                 <li>النظام <strong>يفهم البيانات تلقائياً</strong> من أسماء الأعمدة</li>
                 <li>يدمج الأسماء المجزأة (الاسم الأول + الأب + الجد + العائلة) تلقائياً</li>
                 <li>الأعمدة الإضافية تُتجاهل ولا تسبب فشل الاستيراد</li>
                 <li>البيانات الناقصة تُكمل بقيم افتراضية</li>
-                <li><strong>لن يتم رفض الملف</strong> إلا إذا كان فارغاً أو تالفاً</li>
               </ul>
             </AlertDescription>
           </Alert>
