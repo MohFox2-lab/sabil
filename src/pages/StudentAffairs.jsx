@@ -33,20 +33,13 @@ export default function StudentAffairs() {
       <Card className="shadow-xl">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <CardHeader className="bg-gradient-to-l from-gray-50 to-gray-100 border-b-2">
-            <TabsList className="grid w-full grid-cols-2 md:grid-cols-6 gap-2 bg-transparent h-auto">
+            <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 gap-2 bg-transparent h-auto">
               <TabsTrigger 
                 value="misconducts" 
                 className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white py-4 text-sm md:text-base font-bold"
               >
                 <ClipboardList className="w-4 h-4 md:w-5 md:h-5 ml-1 md:ml-2" />
                 <span className="hidden md:inline">لائحة </span>المخالفات
-              </TabsTrigger>
-              <TabsTrigger 
-                value="register" 
-                className="data-[state=active]:bg-red-600 data-[state=active]:text-white py-4 text-sm md:text-base font-bold"
-              >
-                <AlertTriangle className="w-4 h-4 md:w-5 md:h-5 ml-1 md:ml-2" />
-                تسجيل مخالفة
               </TabsTrigger>
               <TabsTrigger 
                 value="students" 
@@ -82,10 +75,6 @@ export default function StudentAffairs() {
           <CardContent className="p-4 md:p-6">
             <TabsContent value="misconducts" className="mt-0">
               <MisconductsTab />
-            </TabsContent>
-
-            <TabsContent value="register" className="mt-0">
-              <RegisterIncidentTab />
             </TabsContent>
 
             <TabsContent value="students" className="mt-0">

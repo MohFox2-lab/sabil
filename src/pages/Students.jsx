@@ -8,7 +8,8 @@ import {
   FileText,
   ClipboardList,
   Calendar,
-  FileSignature
+  FileSignature,
+  AlertTriangle
 } from 'lucide-react';
 import BasicInfoTab from '../components/students/BasicInfoTab';
 import ContactInfoTab from '../components/students/ContactInfoTab';
@@ -18,6 +19,7 @@ import AbsencesTab from '../components/students/AbsencesTab';
 import PledgesTab from '../components/students/PledgesTab';
 import TrackingTab from '../components/students/TrackingTab';
 import SMSShieldTab from '../components/students/SMSShieldTab';
+import RegisterIncidentTab from '../components/affairs/RegisterIncidentTab';
 
 export default function Students() {
   return (
@@ -37,6 +39,10 @@ export default function Students() {
             <TabsTrigger value="contact" className="gap-2 bg-white border-2 border-emerald-300 text-emerald-700 data-[state=active]:bg-emerald-500 data-[state=active]:text-white data-[state=active]:border-emerald-500 px-3 py-2 text-sm">
               <Phone className="w-4 h-4" />
               <span className="truncate">بيانات الاتصال</span>
+            </TabsTrigger>
+            <TabsTrigger value="misconduct" className="gap-2 bg-white border-2 border-red-300 text-red-700 data-[state=active]:bg-red-500 data-[state=active]:text-white data-[state=active]:border-red-500 px-3 py-2 text-sm">
+              <AlertTriangle className="w-4 h-4" />
+              <span className="truncate">المخالفات السلوكية</span>
             </TabsTrigger>
             <TabsTrigger value="excuse" className="gap-2 bg-white border-2 border-purple-300 text-purple-700 data-[state=active]:bg-purple-500 data-[state=active]:text-white data-[state=active]:border-purple-500 px-3 py-2 text-sm">
               <ClipboardList className="w-4 h-4" />
@@ -77,6 +83,10 @@ export default function Students() {
 
         <TabsContent value="contact" className="mt-6">
           <ContactInfoTab />
+        </TabsContent>
+
+        <TabsContent value="misconduct" className="mt-6">
+          <RegisterIncidentTab />
         </TabsContent>
 
         <TabsContent value="excuse" className="mt-6">
