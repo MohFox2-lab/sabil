@@ -308,13 +308,32 @@ export default function ImportStudentData() {
 
                 {result.errors.length > 0 && (
                   <div>
-                    <h4 className="font-bold mb-2 text-red-700">الأخطاء:</h4>
-                    <div className="bg-red-50 p-4 rounded-lg max-h-64 overflow-y-auto">
+                    <h4 className="font-bold mb-3 text-red-700 text-lg">الأخطاء:</h4>
+                    <div className="bg-red-50 border-2 border-red-200 p-4 rounded-lg max-h-96 overflow-y-auto space-y-3">
                       {result.errors.map((err, idx) => (
-                        <div key={idx} className="text-sm mb-2 border-b border-red-200 pb-2">
-                          <span className="font-semibold">{err.student}:</span> {err.error}
+                        <div key={idx} className="bg-white p-3 rounded-lg border border-red-200 shadow-sm">
+                          <div className="flex items-start gap-2">
+                            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                            <div className="flex-1">
+                              <p className="font-bold text-gray-800 mb-1">
+                                الطالب: {err.student}
+                              </p>
+                              <p className="text-sm text-red-700">
+                                <span className="font-semibold">السبب:</span> {err.error}
+                              </p>
+                            </div>
+                          </div>
                         </div>
                       ))}
+                    </div>
+                    <div className="mt-4 bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                      <p className="text-sm text-blue-800 font-semibold mb-2">💡 كيفية حل المشكلة:</p>
+                      <ul className="text-sm text-blue-700 space-y-1 mr-4">
+                        <li>• تأكد من وجود الحقول الإلزامية الخمسة في ملف Excel</li>
+                        <li>• تأكد من تطابق أسماء الأعمدة مع الحقول المطلوبة بالضبط</li>
+                        <li>• تأكد من عدم ترك الحقول الإلزامية فارغة</li>
+                        <li>• تأكد من أن الصف (grade_class) رقم من 1 إلى 12</li>
+                      </ul>
                     </div>
                   </div>
                 )}
