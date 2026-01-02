@@ -14,7 +14,6 @@ import {
   TrendingDown,
   ArrowLeft
 } from 'lucide-react';
-import LatestBehaviorIncidents from '../components/dashboard/LatestBehaviorIncidents';
 
 export default function Dashboard() {
   const { data: students = [] } = useQuery({
@@ -102,8 +101,43 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Incidents with Empty State Logic */}
-        <LatestBehaviorIncidents />
+        {/* Recent Incidents */}
+        <Card className="shadow-lg">
+          <CardHeader className="bg-red-50 border-b-2 border-red-200">
+            <CardTitle className="flex items-center gap-2 text-red-800">
+              <AlertTriangle className="w-5 h-5" />
+              آخر المخالفات السلوكية
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            {incidents.length === 0 ? (
+              <p className="text-center text-gray-500 py-8">لا توجد مخالفات مسجلة</p>
+            ) : (
+              <div className="space-y-4">
+                {incidents.map((incident) => (
+                  <div key={incident.id} className="flex items-start gap-3 p-4 bg-red-50 rounded-lg border border-red-100">
+                    <div className="flex-1">
+                      <p className="font-semibold text-gray-800">{incident.student_name}</p>
+                      <p className="text-sm text-gray-600">{incident.misconduct_title}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {new Date(incident.date).toLocaleDateString('ar-SA')}
+                      </p>
+                    </div>
+                    <div className="bg-red-600 text-white px-3 py-1 rounded-full text-sm font-bold">
+                      -{incident.points_deducted}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <Link to={createPageUrl('BehaviorIncidents')}>
+              <Button className="w-full mt-4 bg-red-600 hover:bg-red-700">
+                عرض الكل
+                <ArrowLeft className="w-4 h-4 mr-2" />
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
 
         {/* Recent Positive Actions */}
         <Card className="shadow-lg">
