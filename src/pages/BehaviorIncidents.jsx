@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AlertTriangle, Plus, X, Save, Search, FileText, ClipboardEdit } from 'lucide-react';
+import { AlertTriangle, Plus, X, Save, Search, FileText, ClipboardEdit, Trash2, Edit } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import BehaviorIncidentsReport from '../components/reports/BehaviorIncidentsReport';
@@ -17,6 +17,7 @@ export default function BehaviorIncidents() {
   const [showAdvancedForm, setShowAdvancedForm] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [editingIncident, setEditingIncident] = useState(null);
   const [formData, setFormData] = useState({
     student_id: '',
     misconduct_type_id: '',
@@ -56,18 +57,33 @@ export default function BehaviorIncidents() {
         points_deducted: misconduct?.points_deduction
       };
 
-      await base44.entities.BehaviorIncident.create(incidentData);
-
-      // Update student score
-      const newScore = Math.max(0, (student.behavior_score || 80) - misconduct.points_deduction);
-      await base44.entities.Student.update(student.id, {
-        behavior_score: newScore
-      });
+      if (editingIncident) {
+        // تعديل مخالفة موجودة
+        const oldIncident = incidents.find(i => i.id === editingIncident);
+        await base44.entities.BehaviorIncident.update(editingIncident, incidentData);
+        
+        // إرجاع النقاط القديمة وخصم النقاط الجديدة
+        const pointsDiff = misconduct.points_deduction - oldIncident.points_deducted;
+        const newScore = Math.max(0, (student.behavior_score || 80) - pointsDiff);
+        await base44.entities.Student.update(student.id, {
+          behavior_score: newScore
+        });
+      } else {
+        // إنشاء مخالفة جديدة
+        await base44.entities.BehaviorIncident.create(incidentData);
+        
+        // تحديث درجة الطالب
+        const newScore = Math.max(0, (student.behavior_score || 80) - misconduct.points_deduction);
+        await base44.entities.Student.update(student.id, {
+          behavior_score: newScore
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['incidents'] });
       queryClient.invalidateQueries({ queryKey: ['students'] });
       setShowForm(false);
+      setEditingIncident(null);
       setFormData({
         student_id: '',
         misconduct_type_id: '',
@@ -79,9 +95,53 @@ export default function BehaviorIncidents() {
     },
   });
 
+  const deleteIncident = useMutation({
+    mutationFn: async (incidentId) => {
+      const incident = incidents.find(i => i.id === incidentId);
+      const student = students.find(s => s.student_id === incident.student_id);
+      
+      // حذف المخالفة
+      await base44.entities.BehaviorIncident.delete(incidentId);
+      
+      // إرجاع النقاط للطالب
+      if (student) {
+        const newScore = Math.min(100, (student.behavior_score || 0) + incident.points_deducted);
+        await base44.entities.Student.update(student.id, {
+          behavior_score: newScore
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['incidents'] });
+      queryClient.invalidateQueries({ queryKey: ['students'] });
+    },
+  });
+
   const handleSubmit = (e) => {
     e.preventDefault();
     createIncident.mutate(formData);
+  };
+
+  const handleEdit = (incident) => {
+    const student = students.find(s => s.student_id === incident.student_id);
+    const misconduct = misconductTypes.find(m => m.title === incident.misconduct_title);
+    
+    setEditingIncident(incident.id);
+    setFormData({
+      student_id: student?.id || '',
+      misconduct_type_id: misconduct?.id || '',
+      date: incident.date,
+      actions_taken: incident.actions_taken || '',
+      notes: incident.notes || '',
+      procedure_number: incident.procedure_number || 1
+    });
+    setShowForm(true);
+  };
+
+  const handleDelete = (incidentId) => {
+    if (confirm('هل أنت متأكد من حذف هذه المخالفة؟ سيتم إرجاع النقاط للطالب.')) {
+      deleteIncident.mutate(incidentId);
+    }
   };
 
   const filteredIncidents = incidents.filter(inc =>
@@ -161,10 +221,30 @@ export default function BehaviorIncidents() {
                   </p>
                 </div>
 
-                <div className="text-left">
+                <div className="text-left flex flex-col gap-2">
                   <div className="bg-red-600 text-white px-4 py-2 rounded-xl text-center shadow-lg">
                     <p className="text-sm">محسوم</p>
                     <p className="text-3xl font-bold">-{incident.points_deducted}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleEdit(incident)}
+                      className="gap-1"
+                    >
+                      <Edit className="w-4 h-4" />
+                      تعديل
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleDelete(incident.id)}
+                      className="gap-1 text-red-600 hover:bg-red-50"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      حذف
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -181,9 +261,20 @@ export default function BehaviorIncidents() {
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
                   <AlertTriangle className="w-6 h-6" />
-                  تسجيل مخالفة سلوكية
+                  {editingIncident ? 'تعديل مخالفة سلوكية' : 'تسجيل مخالفة سلوكية'}
                 </CardTitle>
-                <Button variant="ghost" size="icon" onClick={() => setShowForm(false)} className="text-white hover:bg-red-500">
+                <Button variant="ghost" size="icon" onClick={() => {
+                  setShowForm(false);
+                  setEditingIncident(null);
+                  setFormData({
+                    student_id: '',
+                    misconduct_type_id: '',
+                    date: new Date().toISOString().split('T')[0],
+                    actions_taken: '',
+                    notes: '',
+                    procedure_number: 1
+                  });
+                }} className="text-white hover:bg-red-500">
                   <X className="w-5 h-5" />
                 </Button>
               </div>
@@ -285,7 +376,7 @@ export default function BehaviorIncidents() {
                   </Button>
                   <Button type="submit" className="flex-1 bg-red-600 hover:bg-red-700">
                     <Save className="w-4 h-4 ml-2" />
-                    حفظ المخالفة
+                    {editingIncident ? 'حفظ التعديلات' : 'حفظ المخالفة'}
                   </Button>
                 </div>
               </form>
