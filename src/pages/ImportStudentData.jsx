@@ -34,7 +34,7 @@ export default function ImportStudentData() {
                   student_id: { type: 'string' },
                   full_name: { type: 'string' },
                   grade_level: { type: 'string' },
-                  grade_class: { type: 'number' },
+                  grade_class: { type: ['number', 'string'] },
                   class_division: { type: 'string' },
                   national_id: { type: 'string' },
                   nationality: { type: 'string' },
@@ -46,7 +46,8 @@ export default function ImportStudentData() {
                   residential_address: { type: 'string' },
                   city: { type: 'string' },
                   district: { type: 'string' }
-                }
+                },
+                required: ['student_id', 'full_name', 'grade_level', 'grade_class', 'class_division']
               }
             }
           }
@@ -63,7 +64,7 @@ export default function ImportStudentData() {
         throw new Error('لم يتم العثور على بيانات طلاب في الملف');
       }
 
-      // 3. إدراج الطلاب
+      // 3. التحقق من الحقول الإلزامية وإدراج الطلاب
       const results = {
         success: 0,
         failed: 0,
@@ -72,17 +73,53 @@ export default function ImportStudentData() {
 
       for (const studentData of students) {
         try {
-          await base44.entities.Student.create({
-            ...studentData,
+          // التحقق من الحقول الإلزامية الخمسة
+          const requiredFields = ['student_id', 'full_name', 'grade_level', 'grade_class', 'class_division'];
+          const missingFields = requiredFields.filter(field => !studentData[field]);
+          
+          if (missingFields.length > 0) {
+            throw new Error(`حقول مطلوبة ناقصة: ${missingFields.join(', ')}`);
+          }
+
+          // التأكد من أن grade_class رقم
+          const gradeClass = typeof studentData.grade_class === 'string' 
+            ? parseInt(studentData.grade_class) 
+            : studentData.grade_class;
+
+          if (isNaN(gradeClass) || gradeClass < 1 || gradeClass > 12) {
+            throw new Error('الصف يجب أن يكون رقم من 1 إلى 12');
+          }
+
+          // إنشاء الطالب مع الحقول المتوفرة فقط
+          const studentRecord = {
+            student_id: studentData.student_id,
+            full_name: studentData.full_name,
+            grade_level: studentData.grade_level,
+            grade_class: gradeClass,
+            class_division: studentData.class_division,
             behavior_score: 80,
             attendance_score: 100,
             distinguished_score: 0
-          });
+          };
+
+          // إضافة الحقول الاختيارية فقط إذا كانت موجودة
+          if (studentData.national_id) studentRecord.national_id = studentData.national_id;
+          if (studentData.nationality) studentRecord.nationality = studentData.nationality;
+          if (studentData.birth_date) studentRecord.birth_date = studentData.birth_date;
+          if (studentData.guardian_name) studentRecord.guardian_name = studentData.guardian_name;
+          if (studentData.guardian_phone) studentRecord.guardian_phone = studentData.guardian_phone;
+          if (studentData.guardian_work_phone) studentRecord.guardian_work_phone = studentData.guardian_work_phone;
+          if (studentData.student_phone) studentRecord.student_phone = studentData.student_phone;
+          if (studentData.residential_address) studentRecord.residential_address = studentData.residential_address;
+          if (studentData.city) studentRecord.city = studentData.city;
+          if (studentData.district) studentRecord.district = studentData.district;
+
+          await base44.entities.Student.create(studentRecord);
           results.success++;
         } catch (error) {
           results.failed++;
           results.errors.push({
-            student: studentData.full_name || studentData.student_id,
+            student: studentData.full_name || studentData.student_id || 'غير معروف',
             error: error.message
           });
         }
@@ -138,25 +175,35 @@ export default function ImportStudentData() {
         </CardHeader>
         <CardContent className="p-6 space-y-4">
           <div>
-            <h4 className="font-bold mb-2">الحقول المطلوبة في ملف Excel:</h4>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm bg-gray-50 p-4 rounded-lg">
-              <div>• رقم الطالب (student_id) *</div>
-              <div>• الاسم الكامل (full_name) *</div>
-              <div>• المرحلة (grade_level) *</div>
-              <div>• الصف (grade_class) *</div>
-              <div>• الشعبة (class_division)</div>
-              <div>• رقم الهوية (national_id)</div>
-              <div>• الجنسية (nationality)</div>
-              <div>• تاريخ الميلاد (birth_date)</div>
-              <div>• اسم ولي الأمر (guardian_name)</div>
-              <div>• جوال ولي الأمر (guardian_phone)</div>
-              <div>• هاتف العمل (guardian_work_phone)</div>
-              <div>• جوال الطالب (student_phone)</div>
-              <div>• العنوان (residential_address)</div>
-              <div>• المدينة (city)</div>
-              <div>• الحي (district)</div>
+            <h4 className="font-bold mb-2">الحقول في ملف Excel:</h4>
+            
+            <div className="bg-blue-50 border-2 border-blue-300 p-4 rounded-lg mb-4">
+              <h5 className="font-bold text-blue-800 mb-2">✅ الحقول الإلزامية (Required) *</h5>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+                <div className="font-semibold text-blue-700">• رقم الطالب (student_id) *</div>
+                <div className="font-semibold text-blue-700">• الاسم الكامل (full_name) *</div>
+                <div className="font-semibold text-blue-700">• المرحلة (grade_level) *</div>
+                <div className="font-semibold text-blue-700">• الصف (grade_class) *</div>
+                <div className="font-semibold text-blue-700">• الشعبة (class_division) *</div>
+              </div>
             </div>
-            <p className="text-blue-600 font-semibold mt-3">* الحقول الإلزامية</p>
+
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h5 className="font-bold text-gray-700 mb-2">🟢 الحقول الاختيارية (Optional)</h5>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm text-gray-600">
+                <div>• رقم الهوية (national_id)</div>
+                <div>• الجنسية (nationality)</div>
+                <div>• تاريخ الميلاد (birth_date)</div>
+                <div>• اسم ولي الأمر (guardian_name)</div>
+                <div>• جوال ولي الأمر (guardian_phone)</div>
+                <div>• هاتف العمل (guardian_work_phone)</div>
+                <div>• جوال الطالب (student_phone)</div>
+                <div>• العنوان (residential_address)</div>
+                <div>• المدينة (city)</div>
+                <div>• الحي (district)</div>
+              </div>
+            </div>
+            <p className="text-red-600 font-semibold mt-3">* لا يمكن الاستيراد بدون الحقول الخمسة الإلزامية</p>
           </div>
 
           <Alert>
@@ -167,6 +214,8 @@ export default function ImportStudentData() {
                 <li>المرحلة يجب أن تكون: ابتدائي أو متوسط أو ثانوي</li>
                 <li>الصف يجب أن يكون رقم من 1 إلى 12</li>
                 <li>صيغة الملف: Excel (.xlsx, .xls) أو CSV</li>
+                <li><strong>يمكن الاستيراد بالحقول الخمسة الإلزامية فقط</strong></li>
+                <li>الحقول الاختيارية يمكن تركها فارغة واستكمالها لاحقاً</li>
                 <li>سيتم تهيئة الدرجات الافتراضية: سلوك 80، مواظبة 100، تميز 0</li>
               </ul>
             </AlertDescription>
