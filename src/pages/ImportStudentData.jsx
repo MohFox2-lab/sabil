@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2, Download } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import * as XLSX from 'xlsx';
 
 export default function ImportStudentData() {
   const [file, setFile] = useState(null);
@@ -17,34 +18,19 @@ export default function ImportStudentData() {
       setUploading(true);
       setResult(null);
 
-      // رفع الملف
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      // قراءة ملف Excel مباشرة
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
 
-      // استخراج البيانات من جميع الشيتات تلقائياً
-      const extractResult = await base44.integrations.Core.ExtractDataFromUploadedFile({
-        file_url,
-        json_schema: {
-          type: "object",
-          properties: {
-            data: {
-              type: "array",
-              description: "جميع الطلاب من كل الشيتات",
-              items: {
-                type: "object",
-                additionalProperties: true
-              }
-            }
-          }
-        }
+      // قراءة جميع الشيتات ودمج البيانات
+      const students = [];
+      workbook.SheetNames.forEach(sheetName => {
+        const worksheet = workbook.Sheets[sheetName];
+        const sheetData = XLSX.utils.sheet_to_json(worksheet);
+        students.push(...sheetData);
       });
-
-      if (extractResult.status === 'error') {
-        throw new Error(extractResult.details || 'فشل في قراءة الملف');
-      }
-
-      const students = extractResult.output?.data || [];
       
-      if (!Array.isArray(students) || students.length === 0) {
+      if (students.length === 0) {
         throw new Error('لم يتم العثور على بيانات طلاب في الملف');
       }
 
