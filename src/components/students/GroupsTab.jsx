@@ -15,7 +15,8 @@ export default function GroupsTab() {
   });
 
   const [groups, setGroups] = useState([
-    { id: 1, groupno: 1, groupname: 'مجموعة الصباح', drivername: 'أحمد محمد', drivermobile: '0501234567' }
+    { id: 1, groupno: 1, groupname: 'مجموعة الصباح', drivername: '', drivermobile: '' },
+    { id: 2, groupno: 2, groupname: 'مجموعة المسائية', drivername: '', drivermobile: '' }
   ]);
 
   const [supervisors, setSupervisors] = useState([]);
