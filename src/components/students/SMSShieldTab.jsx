@@ -18,20 +18,17 @@ import {
 } from 'lucide-react';
 
 export default function SMSShieldTab() {
-  const [selectedGrade, setSelectedGrade] = useState('');
-  const [selectedClass, setSelectedClass] = useState('');
-  const [messageType, setMessageType] = useState('نصية');
-  const [recipient, setRecipient] = useState('parent');
+  const [gradeText, setGradeText] = useState('');
+  const [classText, setClassText] = useState('');
   const [selectedStudents, setSelectedStudents] = useState([]);
-  const [messageData, setMessageData] = useState({
-    from: '',
-    to: '',
-    content: ''
-  });
+  const [chosenStudents, setChosenStudents] = useState([]);
+  const [recipient, setRecipient] = useState('parent');
+  const [messageText, setMessageText] = useState('');
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [messageService, setMessageService] = useState('sms');
+  const [readyMessage, setReadyMessage] = useState('');
 
-  // Placeholder data
-  const grades = ['الأول', 'الثاني', 'الثالث'];
-  const classes = ['أ', 'ب', 'ج'];
+  // Placeholder student data
   const students = [
     { id: 1, name: 'أحمد محمد' },
     { id: 2, name: 'فاطمة علي' },
@@ -47,14 +44,27 @@ export default function SMSShieldTab() {
     setSelectedStudents(students.map(s => s.id));
   };
 
+  const handleChooseSelected = () => {
+    const selected = students.filter(s => selectedStudents.includes(s.id));
+    setChosenStudents([...chosenStudents, ...selected.filter(s => !chosenStudents.find(cs => cs.id === s.id))]);
+  };
+
+  const handleRemoveAll = () => {
+    setChosenStudents([]);
+  };
+
+  const handleRemoveSelected = () => {
+    const selectedIds = selectedStudents;
+    setChosenStudents(chosenStudents.filter(s => !selectedIds.includes(s.id)));
+    setSelectedStudents([]);
+  };
+
   const handleShowClass = () => {
-    // Placeholder function to load class students
-    console.log('عرض الفصل:', selectedGrade, selectedClass);
+    console.log('عرض الفصل:', gradeText, classText);
   };
 
   const handleSendMessage = () => {
-    // Placeholder function to send message
-    console.log('إرسال رسالة:', messageData);
+    console.log('إرسال رسالة:', { messageText, recipient, chosenStudents });
   };
 
   return (
@@ -62,144 +72,89 @@ export default function SMSShieldTab() {
       {/* Main 3-Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         
-        {/* القسم الأيسر - Left Section */}
-        <div className="lg:col-span-3 space-y-4">
-          {/* قائمة الفصول والطلاب */}
-          <Card>
+        {/* القسم الأيسر - قائمة الأسماء المختارة */}
+        <div className="lg:col-span-3">
+          <Card className="h-full">
             <CardHeader className="bg-blue-50">
-              <CardTitle className="text-lg">قائمة فصول و أسماء الطلاب</CardTitle>
+              <CardTitle className="text-lg">قائمة الأسماء المختارة</CardTitle>
             </CardHeader>
             <CardContent className="p-4">
-              <div className="border rounded-lg h-48 overflow-y-auto p-2 mb-4 bg-gray-50">
-                {students.map(student => (
-                  <div key={student.id} className="p-2 hover:bg-gray-100 rounded cursor-pointer">
-                    {student.name}
+              <div className="border rounded-lg h-96 overflow-y-auto p-2 bg-white">
+                {chosenStudents.length === 0 ? (
+                  <p className="text-center text-gray-500 py-8">لا يوجد طلاب محددين</p>
+                ) : (
+                  <div className="space-y-2">
+                    {chosenStudents.map(student => (
+                      <div key={student.id} className="p-2 bg-gray-50 hover:bg-gray-100 rounded">
+                        {student.name}
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-              <div className="space-y-2">
-                <Button variant="outline" className="w-full gap-2">
-                  <Eye className="w-4 h-4" />
-                  إظهار
-                </Button>
-                <Button variant="outline" className="w-full gap-2">
-                  <Save className="w-4 h-4" />
-                  حفظ الكل
-                </Button>
-                <Button variant="outline" className="w-full gap-2">
-                  <UserCheck className="w-4 h-4" />
-                  حفظ لمعلم
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* بيانات الرسالة */}
-          <Card>
-            <CardHeader className="bg-amber-50">
-              <CardTitle className="text-lg">بيانات الرسالة</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 space-y-3">
-              <div className="space-y-2">
-                <Label>من:</Label>
-                <Input 
-                  value={messageData.from}
-                  onChange={(e) => setMessageData({...messageData, from: e.target.value})}
-                  placeholder="اسم المرسل"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>إلى:</Label>
-                <Input 
-                  value={messageData.to}
-                  onChange={(e) => setMessageData({...messageData, to: e.target.value})}
-                  placeholder="اسم المستقبل"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>نوع الرسالة:</Label>
-                <Select value={messageType} onValueChange={setMessageType}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="نصية">نصية</SelectItem>
-                    <SelectItem value="إنذار">إنذار</SelectItem>
-                    <SelectItem value="متابعة">متابعة</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>محتوى الرسالة:</Label>
-                <Textarea
-                  value={messageData.content}
-                  onChange={(e) => setMessageData({...messageData, content: e.target.value})}
-                  placeholder="اكتب محتوى الرسالة هنا..."
-                  rows={6}
-                  className="resize-none"
-                />
+                )}
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* القسم الأوسط - Middle Section */}
-        <div className="lg:col-span-6">
-          <Card className="h-full">
+        {/* القسم الأوسط - اختيار الطلاب */}
+        <div className="lg:col-span-6 space-y-4">
+          {/* عوامل اختيار الطلاب */}
+          <Card>
             <CardHeader className="bg-emerald-50">
-              <CardTitle className="text-lg">تحديد الصف والفصل والطلاب</CardTitle>
+              <CardTitle className="text-lg">عوامل اختيار الطلاب</CardTitle>
             </CardHeader>
-            <CardContent className="p-4 space-y-4">
-              {/* Dropdowns */}
+            <CardContent className="p-4">
               <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-2">
                   <Label>الصف:</Label>
-                  <Select value={selectedGrade} onValueChange={setSelectedGrade}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="اختر الصف" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {grades.map(grade => (
-                        <SelectItem key={grade} value={grade}>{grade}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Input
+                    value={gradeText}
+                    onChange={(e) => setGradeText(e.target.value)}
+                    placeholder="مثال: الأول أو 1"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>الفصل:</Label>
-                  <Select value={selectedClass} onValueChange={setSelectedClass}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="اختر الفصل" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {classes.map(cls => (
-                        <SelectItem key={cls} value={cls}>{cls}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Input
+                    value={classText}
+                    onChange={(e) => setClassText(e.target.value)}
+                    placeholder="مثال: أ أو A"
+                  />
                 </div>
                 <div className="flex items-end">
-                  <Button onClick={handleShowClass} className="w-full">
+                  <Button onClick={handleShowClass} className="w-full bg-emerald-600 hover:bg-emerald-700">
                     عرض
                   </Button>
                 </div>
               </div>
+            </CardContent>
+          </Card>
 
-              {/* قائمة الطلاب */}
-              <div className="border rounded-lg p-4 bg-gray-50">
-                <div className="flex justify-between items-center mb-3">
-                  <h3 className="font-bold text-lg">الفصل</h3>
-                  <Button 
-                    variant="link" 
-                    onClick={handleSelectAll}
-                    className="text-blue-600"
-                  >
-                    تحديد الكل
-                  </Button>
+          {/* قائمة الطلاب */}
+          <Card>
+            <CardHeader className="bg-gray-50">
+              <div className="flex justify-between items-center">
+                <CardTitle className="text-lg">اختيار الاسم</CardTitle>
+                <div className="flex items-center gap-2">
+                  <Checkbox 
+                    checked={selectedStudents.length === students.length}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        handleSelectAll();
+                      } else {
+                        setSelectedStudents([]);
+                      }
+                    }}
+                  />
+                  <Label className="cursor-pointer">تحديد الكل</Label>
                 </div>
-                <div className="space-y-2 max-h-96 overflow-y-auto">
+              </div>
+            </CardHeader>
+            <CardContent className="p-4 space-y-4">
+              <div className="border rounded-lg p-3 bg-white max-h-64 overflow-y-auto">
+                <div className="space-y-2">
                   {students.map(student => (
-                    <div key={student.id} className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded">
+                    <div key={student.id} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded">
                       <Checkbox 
                         checked={selectedStudents.includes(student.id)}
                         onCheckedChange={(checked) => {
@@ -215,11 +170,23 @@ export default function SMSShieldTab() {
                   ))}
                 </div>
               </div>
+
+              <div className="flex gap-2">
+                <Button onClick={handleChooseSelected} className="flex-1 bg-blue-600 hover:bg-blue-700">
+                  &lt;&lt; اختيار
+                </Button>
+                <Button onClick={handleRemoveAll} variant="destructive" className="flex-1">
+                  حذف الكل
+                </Button>
+                <Button onClick={handleRemoveSelected} variant="outline" className="flex-1">
+                  حذف المحدد
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* القسم الأيمن - Right Section */}
+        {/* القسم الأيمن - التوجيه والجدولة */}
         <div className="lg:col-span-3 space-y-4">
           {/* توجيه الرسالة */}
           <Card>
@@ -234,16 +201,16 @@ export default function SMSShieldTab() {
                 </div>
                 <div className="flex items-center space-x-2 space-x-reverse">
                   <RadioGroupItem value="student" id="student" />
-                  <Label htmlFor="student" className="cursor-pointer">الطلاب</Label>
+                  <Label htmlFor="student" className="cursor-pointer">الطالب</Label>
                 </div>
               </RadioGroup>
             </CardContent>
           </Card>
 
-          {/* الجدولة */}
+          {/* إرسال رسائل بالمجموعات */}
           <Card>
             <CardHeader className="bg-pink-50">
-              <CardTitle className="text-lg">رسائل الطلاب المجدولة</CardTitle>
+              <CardTitle className="text-lg">إرسال رسائل بالمجموعات</CardTitle>
             </CardHeader>
             <CardContent className="p-4 space-y-4">
               {/* Calendar */}
@@ -252,15 +219,18 @@ export default function SMSShieldTab() {
                   {currentMonth} {currentYear}
                 </div>
                 <div className="grid grid-cols-7 gap-1 text-xs">
-                  {['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map(day => (
-                    <div key={day} className="text-center font-semibold p-1 bg-gray-100">
+                  {['S', 'S', 'M', 'T', 'W', 'T', 'F'].map((day, i) => (
+                    <div key={i} className="text-center font-semibold p-1 bg-gray-100">
                       {day}
                     </div>
                   ))}
                   {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => (
                     <div 
                       key={day} 
-                      className="text-center p-1 hover:bg-blue-100 cursor-pointer rounded border border-gray-200"
+                      className={`text-center p-1 hover:bg-blue-100 cursor-pointer rounded border ${
+                        selectedDate === day ? 'bg-blue-500 text-white' : 'border-gray-200'
+                      }`}
+                      onClick={() => setSelectedDate(day)}
                     >
                       {day}
                     </div>
@@ -268,15 +238,77 @@ export default function SMSShieldTab() {
                 </div>
               </div>
 
-              {/* Schedule Options */}
-              <div className="space-y-3">
+              {/* Schedule Buttons */}
+              <div className="space-y-2">
                 <Button variant="outline" className="w-full text-sm">
-                  إرسال رسائل جماعية في يوم محدد
+                  إرسال رسائل للطلاب في اليوم المحدد
                 </Button>
                 <Button variant="outline" className="w-full text-sm">
-                  إرسال رسائل مخصصة في يوم محدد
+                  إرسال رسائل للمعلمين في اليوم المحدد
                 </Button>
               </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* نص الرسالة وخيارات الإرسال */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2">
+          <Card>
+            <CardHeader className="bg-amber-50">
+              <CardTitle className="text-lg">نص الرسالة</CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 space-y-4">
+              <Textarea
+                value={messageText}
+                onChange={(e) => setMessageText(e.target.value)}
+                placeholder="اكتب نص الرسالة هنا..."
+                rows={6}
+                className="resize-none"
+              />
+              
+              <div className="flex gap-4">
+                <div className="flex items-center space-x-2 space-x-reverse">
+                  <Checkbox 
+                    checked={messageService === 'sms'}
+                    onCheckedChange={(checked) => setMessageService(checked ? 'sms' : '')}
+                  />
+                  <Label className="cursor-pointer">رسالة نصية قصيرة</Label>
+                </div>
+                <div className="flex items-center space-x-2 space-x-reverse">
+                  <Checkbox 
+                    checked={messageService === 'whatsapp'}
+                    onCheckedChange={(checked) => setMessageService(checked ? 'whatsapp' : '')}
+                  />
+                  <Label className="cursor-pointer">خدمة ثانية</Label>
+                </div>
+              </div>
+
+              <Button onClick={handleSendMessage} className="w-full bg-green-600 hover:bg-green-700">
+                إرسال
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div>
+          <Card>
+            <CardHeader className="bg-indigo-50">
+              <CardTitle className="text-lg">رسالة جاهزة</CardTitle>
+            </CardHeader>
+            <CardContent className="p-4">
+              <Select value={readyMessage} onValueChange={setReadyMessage}>
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر رسالة جاهزة" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="welcome">رسالة ترحيب</SelectItem>
+                  <SelectItem value="absence">إشعار غياب</SelectItem>
+                  <SelectItem value="misconduct">إشعار مخالفة</SelectItem>
+                  <SelectItem value="excellence">إشعار تميز</SelectItem>
+                </SelectContent>
+              </Select>
             </CardContent>
           </Card>
         </div>
@@ -287,34 +319,33 @@ export default function SMSShieldTab() {
         <CardContent className="p-4">
           <div className="flex flex-wrap gap-2 justify-center">
             <Button variant="outline" className="gap-2">
-              <FileUp className="w-4 h-4" />
-              استيراد بيانات الطلاب
+              إخراج من النظام
             </Button>
             <Button variant="outline" className="gap-2">
-              <FileText className="w-4 h-4" />
-              أنواع من الملفات
+              عدد الطلاب
             </Button>
             <Button variant="outline" className="gap-2">
-              <FileText className="w-4 h-4" />
-              إدارة ملف إنجاز
+              عدد المخالفات السلوكية
             </Button>
             <Button variant="outline" className="gap-2">
-              <FileText className="w-4 h-4" />
-              إدارة السلوك والمخالفات
+              إخراج بيانات الغياب
             </Button>
             <Button variant="outline" className="gap-2">
-              <FileSpreadsheet className="w-4 h-4" />
-              إخراج إلى إكسل
+              إخراج درجات الطلاب
             </Button>
             <Button variant="outline" className="gap-2">
-              <FileText className="w-4 h-4" />
-              إخراج إلى ملف
-            </Button>
-            <Button variant="outline" className="gap-2">
-              <Download className="w-4 h-4" />
-              إخراج PDF
+              إرجاع من الآخر
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Footer Info */}
+      <Card className="bg-gray-50">
+        <CardContent className="p-3">
+          <p className="text-sm text-center text-gray-600">
+            استعراض بيانات الطلاب المختارين وإرسال رسائل مجملة وتفصيلية لكل طالب
+          </p>
         </CardContent>
       </Card>
     </div>
