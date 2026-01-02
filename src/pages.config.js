@@ -3,6 +3,7 @@ import ApiDocs from './pages/ApiDocs';
 import AttendanceRegistration from './pages/AttendanceRegistration';
 import BehaviorIncidents from './pages/BehaviorIncidents';
 import CheckOut from './pages/CheckOut';
+import Dashboard from './pages/Dashboard';
 import ExamsManagement from './pages/ExamsManagement';
 import GroupsSystem from './pages/GroupsSystem';
 import ImportStudentData from './pages/ImportStudentData';
@@ -17,7 +18,6 @@ import StudentGroupDistribution from './pages/StudentGroupDistribution';
 import StudentTracking from './pages/StudentTracking';
 import Students from './pages/Students';
 import UsersManagement from './pages/UsersManagement';
-import Dashboard from './pages/Dashboard';
 import __Layout from './Layout.jsx';
 
 
@@ -27,6 +27,7 @@ export const PAGES = {
     "AttendanceRegistration": AttendanceRegistration,
     "BehaviorIncidents": BehaviorIncidents,
     "CheckOut": CheckOut,
+    "Dashboard": Dashboard,
     "ExamsManagement": ExamsManagement,
     "GroupsSystem": GroupsSystem,
     "ImportStudentData": ImportStudentData,
@@ -41,7 +42,6 @@ export const PAGES = {
     "StudentTracking": StudentTracking,
     "Students": Students,
     "UsersManagement": UsersManagement,
-    "Dashboard": Dashboard,
 }
 
 export const pagesConfig = {
