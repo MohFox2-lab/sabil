@@ -16,6 +16,7 @@ import StudentAffairs from './pages/StudentAffairs';
 import StudentTracking from './pages/StudentTracking';
 import Students from './pages/Students';
 import UsersManagement from './pages/UsersManagement';
+import StudentGroupDistribution from './pages/StudentGroupDistribution';
 import __Layout from './Layout.jsx';
 
 
@@ -38,6 +39,7 @@ export const PAGES = {
     "StudentTracking": StudentTracking,
     "Students": Students,
     "UsersManagement": UsersManagement,
+    "StudentGroupDistribution": StudentGroupDistribution,
 }
 
 export const pagesConfig = {
