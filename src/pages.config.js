@@ -12,11 +12,10 @@ import PositiveBehavior from './pages/PositiveBehavior';
 import Reports from './pages/Reports';
 import SMSSystem from './pages/SMSSystem';
 import Settings from './pages/Settings';
-import StudentAffairs from './pages/StudentAffairs';
+import StudentGroupDistribution from './pages/StudentGroupDistribution';
 import StudentTracking from './pages/StudentTracking';
 import Students from './pages/Students';
 import UsersManagement from './pages/UsersManagement';
-import StudentGroupDistribution from './pages/StudentGroupDistribution';
 import __Layout from './Layout.jsx';
 
 
@@ -35,11 +34,10 @@ export const PAGES = {
     "Reports": Reports,
     "SMSSystem": SMSSystem,
     "Settings": Settings,
-    "StudentAffairs": StudentAffairs,
+    "StudentGroupDistribution": StudentGroupDistribution,
     "StudentTracking": StudentTracking,
     "Students": Students,
     "UsersManagement": UsersManagement,
-    "StudentGroupDistribution": StudentGroupDistribution,
 }
 
 export const pagesConfig = {

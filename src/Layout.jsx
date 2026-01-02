@@ -148,16 +148,7 @@ export default function Layout({ children, currentPageName }) {
         { label: 'تسجيل الخروج', page: 'CheckOut', icon: LogOut }
       ]
     },
-    {
-      label: 'شؤون الطلاب',
-      icon: Users,
-      items: [
-        { label: 'إعذار الطلاب', page: 'Absences', icon: Calendar },
-        { label: 'التعهدات الخطية', page: 'Pledges', icon: FileSignature },
-        { label: 'المخالفات السلوكية', page: 'BehaviorIncidents', icon: AlertTriangle },
-        { label: 'سجل متابعة الطلاب', page: 'StudentTracking', icon: ClipboardList }
-      ]
-    }
+
   ];
 
   return (
@@ -295,11 +286,6 @@ export default function Layout({ children, currentPageName }) {
               <Link to={createPageUrl('Students')} className="block">
                 <Button variant="ghost" className="w-full text-white hover:bg-emerald-600 justify-start">
                   الطلاب
-                </Button>
-              </Link>
-              <Link to={createPageUrl('StudentAffairs')} className="block">
-                <Button variant="ghost" className="w-full text-white hover:bg-emerald-600 justify-start">
-                  شؤون الطلاب
                 </Button>
               </Link>
               <Link to={createPageUrl('Absences')} className="block">
