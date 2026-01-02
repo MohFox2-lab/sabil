@@ -6,12 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Award, Plus, X, Save, Upload } from 'lucide-react';
+import { Award, Plus, X, Save, Upload, Trash2 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export default function PositiveBehavior() {
   const [showForm, setShowForm] = useState(false);
+  const [selectedActions, setSelectedActions] = useState([]);
   const [formData, setFormData] = useState({
     student_id: '',
     positive_action_id: '',
@@ -76,9 +78,58 @@ export default function PositiveBehavior() {
     },
   });
 
+  const deleteMultipleActions = useMutation({
+    mutationFn: async (actionIds) => {
+      for (const actionId of actionIds) {
+        const action = actions.find(a => a.id === actionId);
+        const student = students.find(s => s.student_id === action.student_id);
+        
+        await base44.entities.StudentPositiveAction.delete(actionId);
+        
+        if (student) {
+          const newDistinguished = Math.max(0, (student.distinguished_score || 0) - action.points_earned);
+          await base44.entities.Student.update(student.id, {
+            distinguished_score: newDistinguished
+          });
+        }
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['student-positive-actions'] });
+      queryClient.invalidateQueries({ queryKey: ['students'] });
+      setSelectedActions([]);
+    },
+  });
+
   const handleSubmit = (e) => {
     e.preventDefault();
     createAction.mutate(formData);
+  };
+
+  const handleSelectAll = (checked) => {
+    if (checked) {
+      setSelectedActions(actions.map(a => a.id));
+    } else {
+      setSelectedActions([]);
+    }
+  };
+
+  const handleSelectAction = (actionId, checked) => {
+    if (checked) {
+      setSelectedActions([...selectedActions, actionId]);
+    } else {
+      setSelectedActions(selectedActions.filter(id => id !== actionId));
+    }
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedActions.length === 0) {
+      alert('الرجاء اختيار سلوكيات للحذف');
+      return;
+    }
+    if (confirm(`هل أنت متأكد من حذف ${selectedActions.length} سلوك متميز؟ سيتم خصم النقاط من الطلاب.`)) {
+      deleteMultipleActions.mutate(selectedActions);
+    }
   };
 
   const selectedActionType = positiveActionTypes.find(a => a.id === formData.positive_action_id);
@@ -91,18 +142,51 @@ export default function PositiveBehavior() {
           <h1 className="text-3xl font-bold text-gray-900">السلوك المتميز</h1>
           <p className="text-gray-600 mt-1">تسجيل السلوكيات المتميزة وتعويض الدرجات</p>
         </div>
-        <Button onClick={() => setShowForm(true)} className="bg-emerald-600 hover:bg-emerald-700">
-          <Plus className="w-5 h-5 ml-2" />
-          تسجيل سلوك متميز
-        </Button>
+        <div className="flex gap-2">
+          {selectedActions.length > 0 && (
+            <Button 
+              onClick={handleDeleteSelected} 
+              variant="destructive"
+              className="gap-2"
+            >
+              <Trash2 className="w-4 h-4" />
+              حذف المحدد ({selectedActions.length})
+            </Button>
+          )}
+          <Button onClick={() => setShowForm(true)} className="bg-emerald-600 hover:bg-emerald-700">
+            <Plus className="w-5 h-5 ml-2" />
+            تسجيل سلوك متميز
+          </Button>
+        </div>
       </div>
+
+      {/* Select All */}
+      {actions.length > 0 && (
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <Checkbox
+                checked={selectedActions.length === actions.length && actions.length > 0}
+                onCheckedChange={handleSelectAll}
+              />
+              <span className="text-sm text-gray-600">تحديد الكل</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Actions List */}
       <div className="grid grid-cols-1 gap-4">
         {actions.map((action) => (
           <Card key={action.id} className="hover:shadow-lg transition-all border-emerald-200">
             <CardContent className="p-6">
-              <div className="flex items-start justify-between">
+              <div className="flex items-start gap-4">
+                <Checkbox
+                  checked={selectedActions.includes(action.id)}
+                  onCheckedChange={(checked) => handleSelectAction(action.id, checked)}
+                  className="mt-1"
+                />
+                <div className="flex-1 flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <h3 className="text-xl font-bold text-gray-800">{action.student_name}</h3>
@@ -127,6 +211,7 @@ export default function PositiveBehavior() {
                     <p className="text-sm">مكتسب</p>
                     <p className="text-3xl font-bold">+{action.points_earned}</p>
                   </div>
+                </div>
                 </div>
               </div>
             </CardContent>
