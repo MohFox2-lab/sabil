@@ -232,7 +232,7 @@ export default function Layout({ children, currentPageName }) {
 
               <Link to={createPageUrl('Students')}>
                 <Button variant={currentPageName === 'Students' ? 'secondary' : 'ghost'} className="text-white hover:bg-emerald-600">
-                  الطلاب
+                  شؤون الطلاب
                 </Button>
               </Link>
 
@@ -285,7 +285,7 @@ export default function Layout({ children, currentPageName }) {
               </Link>
               <Link to={createPageUrl('Students')} className="block">
                 <Button variant="ghost" className="w-full text-white hover:bg-emerald-600 justify-start">
-                  الطلاب
+                  شؤون الطلاب
                 </Button>
               </Link>
               <Link to={createPageUrl('Absences')} className="block">
