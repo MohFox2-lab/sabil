@@ -329,12 +329,12 @@ export default function ImportStudentData() {
             <Button
               onClick={handleImport}
               disabled={!file || uploading}
-              className="w-full bg-blue-600 hover:bg-blue-700 h-12 text-lg"
+              className="w-full bg-blue-600 hover:bg-blue-700 h-12 text-lg disabled:opacity-50"
             >
               {uploading ? (
                 <>
                   <Loader2 className="w-5 h-5 ml-2 animate-spin" />
-                  جاري الاستيراد...
+                  جاري قراءة الملف واستيراد البيانات...
                 </>
               ) : (
                 <>
@@ -349,39 +349,53 @@ export default function ImportStudentData() {
 
       {/* Results */}
       {result && (
-        <Card>
-          <CardHeader className={result.error ? 'bg-red-50' : 'bg-green-50'}>
-            <CardTitle className="flex items-center gap-2">
+        <Card className="border-4 border-blue-300 shadow-xl">
+          <CardHeader className={result.error ? 'bg-red-600' : 'bg-green-600'}>
+            <CardTitle className="flex items-center gap-3 text-white text-2xl">
               {result.error ? (
                 <>
-                  <AlertCircle className="w-5 h-5 text-red-600" />
-                  فشل الاستيراد
+                  <AlertCircle className="w-8 h-8" />
+                  ❌ فشل الاستيراد
                 </>
               ) : (
                 <>
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  نتائج الاستيراد
+                  <CheckCircle className="w-8 h-8" />
+                  ✅ نجح الاستيراد
                 </>
               )}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
             {result.error ? (
-              <Alert variant="destructive">
-                <AlertDescription>{result.error}</AlertDescription>
-              </Alert>
+              <div className="space-y-4">
+                <Alert variant="destructive" className="border-4 border-red-500">
+                  <AlertCircle className="h-5 w-5" />
+                  <AlertDescription className="text-lg font-bold">
+                    السبب: {result.error}
+                  </AlertDescription>
+                </Alert>
+                <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                  <p className="text-sm text-blue-800 font-semibold mb-2">💡 حلول مقترحة:</p>
+                  <ul className="text-sm text-blue-700 space-y-1 mr-4">
+                    <li>• تأكد من أن الملف بصيغة Excel (.xlsx, .xls) أو CSV</li>
+                    <li>• تأكد من وجود بيانات في الملف</li>
+                    <li>• تأكد من وجود عمود للأسماء</li>
+                  </ul>
+                </div>
+              </div>
             ) : (
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-green-100 p-4 rounded-lg text-center">
-                    <p className="text-3xl font-bold text-green-700">{result.success}</p>
-                    <p className="text-green-600">تم الاستيراد بنجاح</p>
-                  </div>
-                  <div className="bg-red-100 p-4 rounded-lg text-center">
-                    <p className="text-3xl font-bold text-red-700">{result.failed}</p>
-                    <p className="text-red-600">فشل الاستيراد</p>
-                  </div>
+                <div className="bg-green-100 border-4 border-green-500 p-8 rounded-lg text-center">
+                  <p className="text-6xl font-bold text-green-700 mb-3">{result.success}</p>
+                  <p className="text-2xl text-green-800 font-bold">طالب تم استيرادهم بنجاح ✅</p>
                 </div>
+
+                {result.failed > 0 && (
+                  <div className="bg-orange-100 border-4 border-orange-500 p-6 rounded-lg text-center">
+                    <p className="text-4xl font-bold text-orange-700 mb-2">{result.failed}</p>
+                    <p className="text-xl text-orange-800 font-bold">طالب فشل استيرادهم ⚠️</p>
+                  </div>
+                )}
 
                 {result.errors.length > 0 && (
                   <div>
