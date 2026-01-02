@@ -23,10 +23,7 @@ export default function GroupsTab() {
   const [selectedDay, setSelectedDay] = useState('');
   const [selectedStudents, setSelectedStudents] = useState([]);
 
-  const students = [
-    { id: 1, name: 'يوسف بن يعقوب البزاز' },
-    { id: 2, name: 'زكريا إبراهيم يوسف السياب' }
-  ];
+  const students = [];
 
   const days = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'];
 
@@ -153,10 +150,10 @@ export default function GroupsTab() {
             </CardContent>
           </Card>
 
-          {/* إضافة الطالب إلى مجموعة */}
+          {/* إضافة المعلم إلى مجموعة */}
           <Card>
             <CardHeader className="bg-purple-50">
-              <CardTitle className="text-lg">إضافة الطالب إلى مجموعة</CardTitle>
+              <CardTitle className="text-lg">إضافة المعلم إلى مجموعة</CardTitle>
             </CardHeader>
             <CardContent className="p-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -194,23 +191,27 @@ export default function GroupsTab() {
               </div>
 
               <div className="space-y-2 mb-4">
-                <Label>اسم الطالب:</Label>
+                <Label>اسم المعلم:</Label>
                 <div className="border rounded-lg p-3 bg-white max-h-48 overflow-y-auto">
-                  {students.map(student => (
-                    <div key={student.id} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded">
-                      <Checkbox 
-                        checked={selectedStudents.includes(student.id)}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setSelectedStudents([...selectedStudents, student.id]);
-                          } else {
-                            setSelectedStudents(selectedStudents.filter(id => id !== student.id));
-                          }
-                        }}
-                      />
-                      <label className="cursor-pointer flex-1">{student.name}</label>
-                    </div>
-                  ))}
+                  {students.length === 0 ? (
+                    <p className="text-center text-gray-500 py-4">لا يوجد معلمين</p>
+                  ) : (
+                    students.map(student => (
+                      <div key={student.id} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded">
+                        <Checkbox 
+                          checked={selectedStudents.includes(student.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedStudents([...selectedStudents, student.id]);
+                            } else {
+                              setSelectedStudents(selectedStudents.filter(id => id !== student.id));
+                            }
+                          }}
+                        />
+                        <label className="cursor-pointer flex-1">{student.name}</label>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
 
