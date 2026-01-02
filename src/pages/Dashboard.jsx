@@ -16,19 +16,32 @@ import {
 } from 'lucide-react';
 
 export default function Dashboard() {
+  const { data: me } = useQuery({
+    queryKey: ['me'],
+    queryFn: () => base44.auth.me(),
+  });
+
   const { data: students = [] } = useQuery({
     queryKey: ['students'],
     queryFn: () => base44.entities.Student.list(),
   });
 
   const { data: incidents = [] } = useQuery({
-    queryKey: ['incidents'],
-    queryFn: () => base44.entities.BehaviorIncident.list('-created_date', 5),
+    queryKey: ['incidents', me?.email],
+    enabled: !!me?.email,
+    queryFn: async () => {
+      const allIncidents = await base44.entities.BehaviorIncident.list('-created_date', 100);
+      return allIncidents.filter(inc => inc.created_by === me.email).slice(0, 5);
+    },
   });
 
   const { data: positiveActions = [] } = useQuery({
-    queryKey: ['positiveActions'],
-    queryFn: () => base44.entities.StudentPositiveAction.list('-created_date', 5),
+    queryKey: ['positiveActions', me?.email],
+    enabled: !!me?.email,
+    queryFn: async () => {
+      const allActions = await base44.entities.StudentPositiveAction.list('-created_date', 100);
+      return allActions.filter(act => act.created_by === me.email).slice(0, 5);
+    },
   });
 
   const totalStudents = students.length;
