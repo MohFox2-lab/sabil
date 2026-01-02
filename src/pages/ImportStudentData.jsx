@@ -17,34 +17,41 @@ export default function ImportStudentData() {
       setUploading(true);
       setResult(null);
 
-      // قراءة الملف مباشرة
-      const text = await file.text();
-      const lines = text.split('\n').filter(line => line.trim());
-      
-      if (lines.length < 2) {
-        throw new Error('الملف فارغ أو لا يحتوي على بيانات');
-      }
+      // رفع الملف أولاً
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
 
-      // قراءة الـ headers من السطر الأول
-      const headers = lines[0].split(',').map(h => h.trim());
-
-      // تحويل الصفوف إلى objects
-      const students = [];
-      for (let i = 1; i < lines.length; i++) {
-        const values = lines[i].split(',').map(v => v.trim());
-        const student = {};
-        headers.forEach((header, index) => {
-          if (values[index]) {
-            student[header] = values[index];
+      // استخراج البيانات من ملف Excel
+      const extractResult = await base44.integrations.Core.ExtractDataFromUploadedFile({
+        file_url,
+        json_schema: {
+          type: "object",
+          properties: {
+            students: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  UserID: { type: "string" },
+                  "School code": { type: "string" },
+                  Identification: { type: "string" },
+                  "First name": { type: "string" },
+                  "Second name": { type: "string" },
+                  "Third name": { type: "string" },
+                  "Family name": { type: "string" }
+                }
+              }
+            }
           }
-        });
-
-        if (Object.keys(student).length > 0) {
-          students.push(student);
         }
+      });
+
+      if (extractResult.status === 'error') {
+        throw new Error(extractResult.details || 'فشل في قراءة الملف');
       }
+
+      const students = extractResult.output?.students || extractResult.output || [];
       
-      if (students.length === 0) {
+      if (!Array.isArray(students) || students.length === 0) {
         throw new Error('لم يتم العثور على بيانات طلاب في الملف');
       }
 
