@@ -25,7 +25,6 @@ import {
   UserCheck,
   LogOut,
   BarChart3,
-  FileDown,
   Undo2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -119,6 +118,12 @@ export default function Layout({ children, currentPageName }) {
     doc.save(`grades-report-${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
+  const handleLogout = () => {
+    if (confirm('هل تريد تسجيل الخروج من النظام؟')) {
+      base44.auth.logout();
+    }
+  };
+
   const menuItems = [
     {
       label: 'ملف',
@@ -131,7 +136,7 @@ export default function Layout({ children, currentPageName }) {
         { label: 'طباعة', icon: Printer, action: 'print' },
         { label: 'تحميل PDF', icon: Download, action: 'pdf' },
         { type: 'separator' },
-        { label: 'إخراج من النظام', icon: FileDown, action: 'export-students' },
+        { label: 'إخراج من النظام', icon: LogOut, action: 'logout' },
         { label: 'عدد الطلاب', icon: Users, action: 'show-student-count' },
         { label: 'عدد المخالفات السلوكية', icon: AlertTriangle, action: 'show-misconduct-count' },
         { label: 'إخراج بيانات الغياب', icon: Calendar, action: 'export-absences' },
@@ -206,8 +211,8 @@ export default function Layout({ children, currentPageName }) {
                           <DropdownMenuItem key={i} className="cursor-pointer" onClick={() => {
                             if (item.page) {
                               window.location.href = createPageUrl(item.page);
-                            } else if (item.action === 'export-students') {
-                              handleExportStudents();
+                            } else if (item.action === 'logout') {
+                              handleLogout();
                             } else if (item.action === 'show-student-count') {
                               handleShowStudentCount();
                             } else if (item.action === 'show-misconduct-count') {
