@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import Papa from 'papaparse';
 
 export default function ImportStudentData() {
   const [file, setFile] = useState(null);
@@ -18,101 +17,124 @@ export default function ImportStudentData() {
       setUploading(true);
       setResult(null);
 
-      // قراءة الملف ومعالجته
-      return new Promise((resolve, reject) => {
-        Papa.parse(file, {
-          header: true, // اعتبار السطر الأول headers
-          skipEmptyLines: true,
-          complete: async (results) => {
-            try {
-              // التحقق من وجود صفوف
-              if (!results.data || results.data.length === 0) {
-                throw new Error('الملف فارغ أو لا يحتوي على بيانات');
-              }
+      // 1. رفع الملف
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
 
-              const students = results.data;
-
-              // التحقق من الحقول الإلزامية وإدراج الطلاب
-              const importResults = {
-                success: 0,
-                failed: 0,
-                errors: []
-              };
-
-              for (const studentData of students) {
-                try {
-                  // التحقق من الحقول الإلزامية الخمسة
-                  const requiredFields = ['student_id', 'full_name', 'grade_level', 'grade_class', 'class_division'];
-                  const missingFields = requiredFields.filter(field => !studentData[field] || studentData[field].toString().trim() === '');
-                  
-                  if (missingFields.length > 0) {
-                    throw new Error(`حقول مطلوبة ناقصة: ${missingFields.join(', ')}`);
-                  }
-
-                  // التأكد من أن grade_class رقم
-                  const gradeClass = typeof studentData.grade_class === 'string' 
-                    ? parseInt(studentData.grade_class) 
-                    : studentData.grade_class;
-
-                  if (isNaN(gradeClass) || gradeClass < 1 || gradeClass > 12) {
-                    throw new Error('الصف يجب أن يكون رقم من 1 إلى 12');
-                  }
-
-                  // إنشاء الطالب مع الحقول المتوفرة فقط
-                  const studentRecord = {
-                    student_id: studentData.student_id.toString().trim(),
-                    full_name: studentData.full_name.toString().trim(),
-                    grade_level: studentData.grade_level.toString().trim(),
-                    grade_class: gradeClass,
-                    class_division: studentData.class_division.toString().trim(),
-                    behavior_score: 80,
-                    attendance_score: 100,
-                    distinguished_score: 0
-                  };
-
-                  // إضافة الحقول الاختيارية فقط إذا كانت موجودة وغير فارغة
-                  if (studentData.national_id && studentData.national_id.toString().trim()) 
-                    studentRecord.national_id = studentData.national_id.toString().trim();
-                  if (studentData.nationality && studentData.nationality.toString().trim()) 
-                    studentRecord.nationality = studentData.nationality.toString().trim();
-                  if (studentData.birth_date && studentData.birth_date.toString().trim()) 
-                    studentRecord.birth_date = studentData.birth_date.toString().trim();
-                  if (studentData.guardian_name && studentData.guardian_name.toString().trim()) 
-                    studentRecord.guardian_name = studentData.guardian_name.toString().trim();
-                  if (studentData.guardian_phone && studentData.guardian_phone.toString().trim()) 
-                    studentRecord.guardian_phone = studentData.guardian_phone.toString().trim();
-                  if (studentData.guardian_work_phone && studentData.guardian_work_phone.toString().trim()) 
-                    studentRecord.guardian_work_phone = studentData.guardian_work_phone.toString().trim();
-                  if (studentData.student_phone && studentData.student_phone.toString().trim()) 
-                    studentRecord.student_phone = studentData.student_phone.toString().trim();
-                  if (studentData.residential_address && studentData.residential_address.toString().trim()) 
-                    studentRecord.residential_address = studentData.residential_address.toString().trim();
-                  if (studentData.city && studentData.city.toString().trim()) 
-                    studentRecord.city = studentData.city.toString().trim();
-                  if (studentData.district && studentData.district.toString().trim()) 
-                    studentRecord.district = studentData.district.toString().trim();
-
-                  await base44.entities.Student.create(studentRecord);
-                  importResults.success++;
-                } catch (error) {
-                  importResults.failed++;
-                  importResults.errors.push({
-                    student: studentData.full_name || studentData.student_id || 'غير معروف',
-                    error: error.message
-                  });
+      // 2. استخراج البيانات
+      const extractResult = await base44.integrations.Core.ExtractDataFromUploadedFile({
+        file_url,
+        json_schema: {
+          type: 'object',
+          properties: {
+            students: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  student_id: { type: 'string' },
+                  full_name: { type: 'string' },
+                  grade_level: { type: 'string' },
+                  grade_class: { type: ['number', 'string'] },
+                  class_division: { type: 'string' },
+                  national_id: { type: 'string' },
+                  nationality: { type: 'string' },
+                  birth_date: { type: 'string' },
+                  guardian_name: { type: 'string' },
+                  guardian_phone: { type: 'string' },
+                  guardian_work_phone: { type: 'string' },
+                  student_phone: { type: 'string' },
+                  residential_address: { type: 'string' },
+                  city: { type: 'string' },
+                  district: { type: 'string' }
                 }
               }
-
-              resolve(importResults);
-            } catch (error) {
-              reject(error);
             }
-          },
-          error: (error) => {
-            reject(new Error('فشل قراءة الملف: ' + error.message));
           }
-        });
+        }
       });
+
+      if (extractResult.status !== 'success') {
+        throw new Error(extractResult.details || 'فشل استخراج البيانات');
+      }
+
+      const students = extractResult.output?.students || [];
+      
+      if (students.length === 0) {
+        throw new Error('لم يتم العثور على بيانات طلاب في الملف');
+      }
+
+      // 3. التحقق من الحقول الإلزامية وإدراج الطلاب
+      const results = {
+        success: 0,
+        failed: 0,
+        errors: []
+      };
+
+      for (const studentData of students) {
+        try {
+          // التحقق من الحقول الإلزامية الخمسة
+          const requiredFields = ['student_id', 'full_name', 'grade_level', 'grade_class', 'class_division'];
+          const missingFields = requiredFields.filter(field => !studentData[field] || studentData[field].toString().trim() === '');
+          
+          if (missingFields.length > 0) {
+            throw new Error(`حقول مطلوبة ناقصة: ${missingFields.join(', ')}`);
+          }
+
+          // التأكد من أن grade_class رقم
+          const gradeClass = typeof studentData.grade_class === 'string' 
+            ? parseInt(studentData.grade_class) 
+            : studentData.grade_class;
+
+          if (isNaN(gradeClass) || gradeClass < 1 || gradeClass > 12) {
+            throw new Error('الصف يجب أن يكون رقم من 1 إلى 12');
+          }
+
+          // إنشاء الطالب مع الحقول المتوفرة فقط
+          const studentRecord = {
+            student_id: studentData.student_id.toString().trim(),
+            full_name: studentData.full_name.toString().trim(),
+            grade_level: studentData.grade_level.toString().trim(),
+            grade_class: gradeClass,
+            class_division: studentData.class_division.toString().trim(),
+            behavior_score: 80,
+            attendance_score: 100,
+            distinguished_score: 0
+          };
+
+          // إضافة الحقول الاختيارية فقط إذا كانت موجودة وغير فارغة
+          if (studentData.national_id && studentData.national_id.toString().trim()) 
+            studentRecord.national_id = studentData.national_id.toString().trim();
+          if (studentData.nationality && studentData.nationality.toString().trim()) 
+            studentRecord.nationality = studentData.nationality.toString().trim();
+          if (studentData.birth_date && studentData.birth_date.toString().trim()) 
+            studentRecord.birth_date = studentData.birth_date.toString().trim();
+          if (studentData.guardian_name && studentData.guardian_name.toString().trim()) 
+            studentRecord.guardian_name = studentData.guardian_name.toString().trim();
+          if (studentData.guardian_phone && studentData.guardian_phone.toString().trim()) 
+            studentRecord.guardian_phone = studentData.guardian_phone.toString().trim();
+          if (studentData.guardian_work_phone && studentData.guardian_work_phone.toString().trim()) 
+            studentRecord.guardian_work_phone = studentData.guardian_work_phone.toString().trim();
+          if (studentData.student_phone && studentData.student_phone.toString().trim()) 
+            studentRecord.student_phone = studentData.student_phone.toString().trim();
+          if (studentData.residential_address && studentData.residential_address.toString().trim()) 
+            studentRecord.residential_address = studentData.residential_address.toString().trim();
+          if (studentData.city && studentData.city.toString().trim()) 
+            studentRecord.city = studentData.city.toString().trim();
+          if (studentData.district && studentData.district.toString().trim()) 
+            studentRecord.district = studentData.district.toString().trim();
+
+          await base44.entities.Student.create(studentRecord);
+          results.success++;
+        } catch (error) {
+          results.failed++;
+          results.errors.push({
+            student: studentData.full_name || studentData.student_id || 'غير معروف',
+            error: error.message
+          });
+        }
+      }
+
+      return results;
     },
     onSuccess: (results) => {
       setUploading(false);
