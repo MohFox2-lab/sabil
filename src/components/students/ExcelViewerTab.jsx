@@ -234,42 +234,110 @@ export default function ExcelViewerTab() {
             continue;
           }
           
-          // محاولة الحصول على الاسم من أي عمود يحتوي على "اسم" أو "name"
+          // البحث الذكي عن الحقول
           let fullName = '';
           let studentId = '';
+          let nationalId = '';
+          let gradeLevel = '';
+          let gradeClass = '';
+          let classDivision = '';
+          let schoolCode = '';
+          let schoolName = '';
+          let schoolCodeMinistry = '';
           
           for (const [key, value] of Object.entries(row)) {
-            const keyLower = String(key).toLowerCase();
-            if (!fullName && (keyLower.includes('اسم') || keyLower.includes('name'))) {
-              fullName = String(value || '');
+            const keyLower = String(key).toLowerCase().trim();
+            const val = String(value || '').trim();
+            
+            // تخطي القيم الفارغة والقيم الرقمية الصغيرة (قد تكون أرقام صفوف)
+            if (!val || (val.length < 2 && !isNaN(val))) continue;
+            
+            // الاسم الكامل - البحث عن أي عمود يحتوي على "اسم" وليس "معرف" أو "مدرسة"
+            if (!fullName && keyLower.includes('اسم') && !keyLower.includes('مدرس') && !keyLower.includes('معرف')) {
+              // التحقق من أن القيمة نص وليست رقم
+              if (isNaN(val) || val.length > 10) {
+                fullName = val;
+                continue;
+              }
             }
-            if (!studentId && (keyLower.includes('رقم') && keyLower.includes('طالب') || keyLower.includes('student') && keyLower.includes('id'))) {
-              studentId = String(value || '');
+            
+            // رقم الطالب
+            if (!studentId && keyLower.includes('رقم') && keyLower.includes('طالب')) {
+              studentId = val;
+              continue;
+            }
+            
+            // رقم الهوية
+            if (!nationalId && (keyLower.includes('هوية') || keyLower.includes('هويه') || keyLower === 'national_id')) {
+              nationalId = val;
+              continue;
+            }
+            
+            // المرحلة
+            if (!gradeLevel && keyLower.includes('مرحل')) {
+              gradeLevel = val;
+              continue;
+            }
+            
+            // الصف
+            if (!gradeClass && keyLower === 'صف') {
+              gradeClass = val;
+              continue;
+            }
+            
+            // الشعبة
+            if (!classDivision && keyLower.includes('شعب')) {
+              classDivision = val;
+              continue;
+            }
+            
+            // معرف المدرسة
+            if (!schoolCode && keyLower.includes('معرف') && keyLower.includes('مدرس')) {
+              schoolCode = val;
+              continue;
+            }
+            
+            // اسم المدرسة
+            if (!schoolName && keyLower.includes('مدرس') && keyLower.includes('اسم')) {
+              schoolName = val;
+              continue;
+            }
+            
+            // الرقم الوزاري
+            if (!schoolCodeMinistry && keyLower.includes('وزار')) {
+              schoolCodeMinistry = val;
+              continue;
             }
           }
           
-          // إذا لم نجد اسم، نستخدم أول قيمة غير فارغة
-          if (!fullName.trim()) {
-            fullName = allValues[0] || '';
+          // إذا لم نجد اسم بعد، نبحث عن أول عمود يحتوي على نص طويل (أكثر من 5 أحرف)
+          if (!fullName) {
+            for (const val of allValues) {
+              const valStr = String(val).trim();
+              if (valStr.length > 5 && isNaN(valStr)) {
+                fullName = valStr;
+                break;
+              }
+            }
           }
           
           const studentData = {
-            student_id: studentId || row['student_id'] || row['رقم الطالب'] || '',
-            full_name: fullName || row['full_name'] || row['الاسم الكامل'] || row['الاسم'] || '',
-            national_id: row['رقم الهوية'] || row['national_id'] || '',
-            grade_level: row['المرحلة'] || row['grade_level'] || 'متوسط',
-            grade_class: parseInt(row['الصف'] || row['grade_class'] || '1') || 1,
-            class_division: row['الشعبة'] || row['class_division'] || '',
-            school_code: row['معرف المدرسة'] || row['school_code'] || '',
-            school_name: row['اسم المدرسة'] || row['school_name'] || '',
-            school_code_ministry: row['الرقم الوزاري'] || row['school_code_ministry'] || '',
-            nationality: row['الجنسية'] || row['nationality'] || 'سعودي',
+            student_id: studentId,
+            full_name: fullName,
+            national_id: nationalId,
+            grade_level: gradeLevel || 'متوسط',
+            grade_class: parseInt(gradeClass) || 1,
+            class_division: classDivision,
+            school_code: schoolCode,
+            school_name: schoolName,
+            school_code_ministry: schoolCodeMinistry,
+            nationality: 'سعودي',
             behavior_score: 80,
             attendance_score: 100
           };
           
           // حفظ السجل إذا كان فيه اسم على الأقل
-          if (studentData.full_name.trim()) {
+          if (studentData.full_name) {
             await base44.entities.Student.create(studentData);
             success++;
           } else {
