@@ -24,6 +24,7 @@ import SMSShieldTab from '../components/students/SMSShieldTab';
 import RegisterIncidentTab from '../components/affairs/RegisterIncidentTab';
 import BehaviorContractTab from '../components/students/BehaviorContractTab';
 import ExcelViewerTab from '../components/students/ExcelViewerTab';
+import ImportWizardTab from '../components/students/ImportWizardTab';
 
 export default function Students() {
   return (
