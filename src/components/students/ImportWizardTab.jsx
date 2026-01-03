@@ -71,6 +71,8 @@ function normalizeValue(val) {
 export default function ImportWizardTab() {
   const [step, setStep] = useState(1);
   const [fileInfo, setFileInfo] = useState(null);
+  const [allSheets, setAllSheets] = useState([]);
+  const [selectedSheet, setSelectedSheet] = useState('all');
   const [excelHeaders, setExcelHeaders] = useState([]);
   const [excelRows, setExcelRows] = useState([]);
   const [columnMapping, setColumnMapping] = useState({});
@@ -95,34 +97,62 @@ export default function ImportWizardTab() {
 
       const XLSX = await loadXLSX();
       const workbook = XLSX.read(buffer, { type: 'array' });
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
       
-      const aoa = XLSX.utils.sheet_to_json(worksheet, {
-        header: 1,
-        defval: '',
-        blankrows: false,
-        raw: true
-      });
-
-      if (!aoa.length) throw new Error('الملف فارغ');
-
-      const headers = aoa[0].map((h, idx) => {
-        const str = normalizeValue(h);
-        return str || `عمود_${idx + 1}`;
-      });
-
-      const rows = aoa.slice(1).map(row => {
-        const obj = {};
-        headers.forEach((h, idx) => {
-          obj[h] = normalizeValue(row[idx] || '');
+      // قراءة جميع الشيتات
+      const sheetsData = [];
+      let totalRows = 0;
+      
+      workbook.SheetNames.forEach(sheetName => {
+        const worksheet = workbook.Sheets[sheetName];
+        const aoa = XLSX.utils.sheet_to_json(worksheet, {
+          header: 1,
+          defval: '',
+          blankrows: false,
+          raw: true
         });
-        return obj;
+
+        if (aoa.length > 0) {
+          const headers = aoa[0].map((h, idx) => {
+            const str = normalizeValue(h);
+            return str || `عمود_${idx + 1}`;
+          });
+
+          const rows = aoa.slice(1).map(row => {
+            const obj = { _sheet: sheetName }; // نضيف اسم الشيت لكل صف
+            headers.forEach((h, idx) => {
+              obj[h] = normalizeValue(row[idx] || '');
+            });
+            return obj;
+          });
+
+          sheetsData.push({
+            name: sheetName,
+            headers,
+            rows,
+            rowCount: rows.length
+          });
+          
+          totalRows += rows.length;
+        }
       });
 
-      setFileInfo({ name: file.name, sheet: sheetName, rowCount: rows.length });
-      setExcelHeaders(headers);
-      setExcelRows(rows);
+      if (!sheetsData.length) throw new Error('الملف فارغ أو لا يحتوي على بيانات');
+
+      setAllSheets(sheetsData);
+      setFileInfo({ 
+        name: file.name, 
+        sheetCount: sheetsData.length,
+        totalRows: totalRows,
+        sheets: sheetsData.map(s => ({ name: s.name, rowCount: s.rowCount }))
+      });
+      
+      // استخدام الشيت الأول كإعداد افتراضي
+      const firstSheet = sheetsData[0];
+      setExcelHeaders(firstSheet.headers);
+      
+      // جمع صفوف من جميع الشيتات
+      const allRows = sheetsData.flatMap(sheet => sheet.rows);
+      setExcelRows(allRows);
       
       // Auto-map obvious columns
       const autoMapping = {};
@@ -271,6 +301,8 @@ export default function ImportWizardTab() {
   const resetWizard = () => {
     setStep(1);
     setFileInfo(null);
+    setAllSheets([]);
+    setSelectedSheet('all');
     setExcelHeaders([]);
     setExcelRows([]);
     setColumnMapping({});
@@ -393,9 +425,32 @@ export default function ImportWizardTab() {
             </Alert>
 
             {fileInfo && (
-              <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="bg-gray-50 p-4 rounded-lg space-y-3">
                 <p className="font-semibold">الملف: {fileInfo.name}</p>
-                <p className="text-sm text-gray-600">عدد الصفوف: {fileInfo.rowCount} | الأعمدة: {excelHeaders.length}</p>
+                <div className="grid grid-cols-3 gap-4 text-sm">
+                  <div className="bg-white p-3 rounded border">
+                    <p className="text-gray-500">عدد الشيتات</p>
+                    <p className="text-2xl font-bold text-blue-600">{fileInfo.sheetCount}</p>
+                  </div>
+                  <div className="bg-white p-3 rounded border">
+                    <p className="text-gray-500">إجمالي الصفوف</p>
+                    <p className="text-2xl font-bold text-green-600">{fileInfo.totalRows}</p>
+                  </div>
+                  <div className="bg-white p-3 rounded border">
+                    <p className="text-gray-500">الأعمدة</p>
+                    <p className="text-2xl font-bold text-purple-600">{excelHeaders.length}</p>
+                  </div>
+                </div>
+                <div className="bg-blue-50 border border-blue-200 rounded p-3">
+                  <p className="font-semibold text-blue-800 mb-2">الشيتات المتاحة:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {fileInfo.sheets.map((sheet, idx) => (
+                      <Badge key={idx} className="bg-blue-600 text-white">
+                        {sheet.name} ({sheet.rowCount} صف)
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
 
@@ -481,7 +536,12 @@ export default function ImportWizardTab() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-bold text-lg">جاهز للاستيراد</p>
-                  <p className="text-sm text-gray-600">سيتم استيراد {excelRows.length} طالب</p>
+                  <p className="text-sm text-gray-600">سيتم استيراد {excelRows.length} طالب من {fileInfo.sheetCount} شيت</p>
+                  {fileInfo.sheets.length > 1 && (
+                    <p className="text-xs text-blue-600 mt-1">
+                      ✨ سيتم استيراد البيانات من جميع الشيتات معاً
+                    </p>
+                  )}
                 </div>
                 <Badge className="bg-green-600 text-white text-lg px-4 py-2">
                   {excelRows.length} سجل
