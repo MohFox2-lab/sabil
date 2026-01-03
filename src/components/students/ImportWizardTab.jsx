@@ -351,7 +351,7 @@ export default function ImportWizardTab() {
       if (saveToDatabase) {
         queryClient.invalidateQueries({ queryKey: ['students'] });
       }
-      setStep(4);
+      setStep(5);
     }
   });
 
@@ -403,7 +403,7 @@ export default function ImportWizardTab() {
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-4">
-            {[1, 2, 3, 4].map(s => (
+            {[1, 2, 3, 4, 5].map(s => (
               <div key={s} className="flex items-center">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
                   step > s ? 'bg-green-600 text-white' : 
@@ -412,15 +412,16 @@ export default function ImportWizardTab() {
                 }`}>
                   {step > s ? <CheckCircle2 className="w-6 h-6" /> : s}
                 </div>
-                {s < 4 && <div className={`w-24 h-1 mx-2 ${step > s ? 'bg-green-600' : 'bg-gray-300'}`} />}
+                {s < 5 && <div className={`w-20 h-1 mx-2 ${step > s ? 'bg-green-600' : 'bg-gray-300'}`} />}
               </div>
             ))}
           </div>
           <div className="flex justify-between text-sm">
             <span className={step >= 1 ? 'text-blue-600 font-semibold' : 'text-gray-500'}>1. رفع الملف</span>
             <span className={step >= 2 ? 'text-blue-600 font-semibold' : 'text-gray-500'}>2. ربط الأعمدة</span>
-            <span className={step >= 3 ? 'text-blue-600 font-semibold' : 'text-gray-500'}>3. المراجعة</span>
-            <span className={step >= 4 ? 'text-blue-600 font-semibold' : 'text-gray-500'}>4. الاستيراد</span>
+            <span className={step >= 3 ? 'text-blue-600 font-semibold' : 'text-gray-500'}>3. المعاينة</span>
+            <span className={step >= 4 ? 'text-blue-600 font-semibold' : 'text-gray-500'}>4. الحفظ</span>
+            <span className={step >= 5 ? 'text-blue-600 font-semibold' : 'text-gray-500'}>5. النتائج</span>
           </div>
         </CardContent>
       </Card>
@@ -587,20 +588,20 @@ export default function ImportWizardTab() {
         </Card>
       )}
 
-      {/* Step 3: Review */}
+      {/* Step 3: Preview Data */}
       {step === 3 && (
         <Card>
           <CardHeader className="bg-blue-50">
             <CardTitle className="flex items-center gap-2">
               <Eye className="w-5 h-5" />
-              الخطوة 3: مراجعة البيانات
+              الخطوة 3: معاينة محتويات الملف
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6 space-y-4">
             <Alert>
               <CheckCircle2 className="w-4 h-4" />
               <AlertDescription>
-                معاينة أول 10 سجلات بعد الربط. تأكد من صحة البيانات قبل الاستيراد.
+                معاينة البيانات بعد الربط. راجع البيانات قبل الانتقال لخطوة الحفظ.
               </AlertDescription>
             </Alert>
 
@@ -654,45 +655,20 @@ export default function ImportWizardTab() {
               </Alert>
             )}
 
-            <div className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300 rounded-lg p-6">
-              <div className="flex items-center justify-between mb-4">
+            <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4">
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-bold text-xl text-green-800">جاهز للمعالجة</p>
-                  <p className="text-sm text-gray-600">
-                    {saveToDatabase 
-                      ? `سيتم حفظ ${excelRows.length} طالب في قاعدة البيانات`
-                      : `معاينة ${excelRows.length} طالب بدون حفظ`
-                    }
-                  </p>
+                  <p className="font-bold text-lg text-blue-800">معاينة البيانات</p>
+                  <p className="text-sm text-gray-600">عرض أول 10 سجلات من أصل {excelRows.length}</p>
                   {fileInfo.sheets.length > 1 && (
                     <p className="text-xs text-blue-600 mt-1">
                       ✨ البيانات من {fileInfo.sheetCount} شيت
                     </p>
                   )}
                 </div>
-                <Badge className="bg-green-600 text-white text-lg px-4 py-2">
+                <Badge className="bg-blue-600 text-white text-lg px-4 py-2">
                   {excelRows.length} سجل
                 </Badge>
-              </div>
-
-              {/* خيار الحفظ */}
-              <div className="bg-white rounded-lg p-4 border-2 border-blue-200">
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={saveToDatabase}
-                    onChange={(e) => setSaveToDatabase(e.target.checked)}
-                    className="w-5 h-5 text-blue-600 rounded"
-                  />
-                  <div>
-                    <p className="font-semibold text-gray-900">حفظ في قاعدة البيانات</p>
-                    <p className="text-xs text-gray-500">
-                      {saveToDatabase 
-                        ? '✅ سيتم حفظ البيانات نهائياً في النظام'
-                        : '⚠️ معاينة فقط - لن يتم حفظ أي شيء'}
-                    </p>
-                  </div>
-                </label>
               </div>
             </div>
 
@@ -700,6 +676,7 @@ export default function ImportWizardTab() {
               <table className="w-full min-w-max">
                 <thead className="bg-gray-50">
                   <tr>
+                    <th className="text-right p-3 font-semibold text-sm border-b">#</th>
                     {STUDENT_ATTRIBUTES.filter(a => a.required).map(attr => (
                       <th key={attr.value} className="text-right p-3 font-semibold text-sm border-b">
                         {attr.label}
@@ -710,6 +687,7 @@ export default function ImportWizardTab() {
                 <tbody>
                   {previewData.map((row, idx) => (
                     <tr key={idx} className="border-b hover:bg-gray-50">
+                      <td className="p-3 text-sm text-gray-500">{idx + 1}</td>
                       {STUDENT_ATTRIBUTES.filter(a => a.required).map(attr => (
                         <td key={attr.value} className="p-3 text-sm">
                           {row[attr.value] || <span className="text-red-500">غير محدد</span>}
@@ -727,22 +705,98 @@ export default function ImportWizardTab() {
                 تعديل الربط
               </Button>
               <Button 
-                onClick={handleImport}
-                disabled={importMutation.isPending || (validateData && validateData.valid === 0)}
-                className={`flex-1 ${saveToDatabase ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'}`}
+                onClick={() => setStep(4)}
+                disabled={validateData && validateData.valid === 0}
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
               >
-                <Database className="w-4 h-4 ml-2" />
-                {importMutation.isPending 
-                  ? (saveToDatabase ? 'جاري الحفظ...' : 'جاري المعاينة...') 
-                  : (saveToDatabase ? 'حفظ في قاعدة البيانات' : 'معاينة البيانات فقط')}
+                التالي: الحفظ
+                <ArrowRight className="w-4 h-4 mr-2" />
               </Button>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Step 4: Results */}
-      {step === 4 && importResults && (
+      {/* Step 4: Save Options */}
+      {step === 4 && (
+        <Card>
+          <CardHeader className="bg-green-50">
+            <CardTitle className="flex items-center gap-2">
+              <Database className="w-5 h-5" />
+              الخطوة 4: حفظ البيانات
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 space-y-4">
+            <Alert>
+              <AlertCircle className="w-4 h-4" />
+              <AlertDescription>
+                اختر ما إذا كنت تريد حفظ البيانات في قاعدة البيانات أو معاينتها فقط.
+              </AlertDescription>
+            </Alert>
+
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300 rounded-lg p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <p className="font-bold text-2xl text-green-800">جاهز للحفظ</p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {excelRows.length} سجل جاهز للمعالجة
+                  </p>
+                </div>
+                <Badge className="bg-green-600 text-white text-xl px-6 py-3">
+                  {validateData?.valid || 0} صالح
+                </Badge>
+              </div>
+
+              {/* خيار الحفظ */}
+              <div className="bg-white rounded-lg p-6 border-2 border-blue-300 shadow-sm">
+                <label className="flex items-start gap-4 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={saveToDatabase}
+                    onChange={(e) => setSaveToDatabase(e.target.checked)}
+                    className="w-6 h-6 text-blue-600 rounded mt-1"
+                  />
+                  <div className="flex-1">
+                    <p className="font-bold text-lg text-gray-900">حفظ في قاعدة البيانات</p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {saveToDatabase 
+                        ? '✅ سيتم حفظ البيانات نهائياً في النظام'
+                        : '⚠️ معاينة فقط - لن يتم حفظ أي شيء'}
+                    </p>
+                    {saveToDatabase && (
+                      <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                        <p className="text-sm text-yellow-800 font-semibold">⚠️ تنبيه مهم:</p>
+                        <p className="text-xs text-yellow-700 mt-1">
+                          سيتم إضافة {excelRows.length} طالب إلى قاعدة البيانات. هذه العملية لا يمكن التراجع عنها.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button variant="outline" onClick={() => setStep(3)}>
+                <ArrowLeft className="w-4 h-4 ml-2" />
+                رجوع للمعاينة
+              </Button>
+              <Button 
+                onClick={handleImport}
+                disabled={importMutation.isPending || (validateData && validateData.valid === 0)}
+                className={`flex-1 ${saveToDatabase ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'}`}
+              >
+                {importMutation.isPending 
+                  ? (saveToDatabase ? 'جاري الحفظ...' : 'جاري المعاينة...') 
+                  : (saveToDatabase ? '💾 حفظ في قاعدة البيانات' : '👁️ معاينة البيانات فقط')}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Step 5: Results */}
+      {step === 5 && importResults && (
         <Card>
           <CardHeader className={importResults.previewOnly ? "bg-blue-50" : "bg-green-50"}>
             <CardTitle className="flex items-center gap-2">
