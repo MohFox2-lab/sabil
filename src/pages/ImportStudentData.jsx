@@ -498,12 +498,17 @@ export default function ImportStudentData() {
                               <p className="font-bold text-gray-800 mb-1">
                                 الطالب: {err.student}
                               </p>
-                              <p className="text-sm text-red-700">
-                                <span className="font-semibold">السبب:</span> {err.error}
+                              <p className="text-sm text-red-700 mb-1">
+                               <span className="font-semibold">السبب:</span> {err.error}
                               </p>
-                            </div>
-                          </div>
-                        </div>
+                              {err.columns && (
+                               <p className="text-xs text-gray-500 mt-1 bg-gray-50 p-2 rounded">
+                                 <span className="font-semibold">الأعمدة:</span> {err.columns}
+                               </p>
+                              )}
+                              </div>
+                              </div>
+                              </div>
                       ))}
                     </div>
                     <div className="mt-4 bg-blue-50 border border-blue-200 p-4 rounded-lg">
