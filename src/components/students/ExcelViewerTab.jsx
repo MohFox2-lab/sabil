@@ -130,22 +130,22 @@ export default function ExcelViewerTab() {
         const rawHeaders = aoa[0];
         const fixedHeaders = normalizeHeaders(rawHeaders);
 
-        const dataRows = aoa.slice(1)
-          .filter(arr => arr && arr.length > 0 && arr.some(cell => cell !== null && cell !== undefined && cell !== ''))
-          .map((arr) => {
-            const obj = {};
-            fixedHeaders.forEach((h, idx) => {
-              const cellValue = arr?.[idx];
-              // ✅ معالجة خاصة للأرقام الطويلة (أرقام الهوية)
-              if (typeof cellValue === 'number' && cellValue > 999999999) {
-                // تحويل الأرقام الطويلة إلى نص بدون تدوين علمي
-                obj[h] = cellValue.toFixed(0);
-              } else {
-                obj[h] = toSafeString(cellValue ?? "");
-              }
-            });
-            return obj;
+        const dataRows = aoa.slice(1).map((arr) => {
+          const obj = {};
+          fixedHeaders.forEach((h, idx) => {
+            const cellValue = arr?.[idx];
+            // ✅ معالجة خاصة للأرقام الطويلة (أرقام الهوية)
+            if (typeof cellValue === 'number' && cellValue > 999999999) {
+              obj[h] = cellValue.toFixed(0);
+            } else {
+              obj[h] = toSafeString(cellValue ?? "");
+            }
           });
+          return obj;
+        }).filter(obj => {
+          // ✅ نحذف فقط الصفوف الفارغة تماماً (كل القيم فارغة)
+          return Object.values(obj).some(val => val && String(val).trim() !== '');
+        });
 
         return {
           name: sheetName,
