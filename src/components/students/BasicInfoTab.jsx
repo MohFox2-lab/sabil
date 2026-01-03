@@ -248,14 +248,13 @@ export default function BasicInfoTab() {
                     />
                   </th>
 
+                  <th className="text-right p-3 font-bold whitespace-nowrap min-w-[220px]">الاسم الكامل</th>
                   <th className="text-right p-3 font-bold whitespace-nowrap min-w-[150px]">رقم الهوية</th>
 
                   {/* أعمدة المدرسة */}
                   <th className="text-right p-3 font-bold whitespace-nowrap min-w-[140px]">معرف المدرسة</th>
                   <th className="text-right p-3 font-bold whitespace-nowrap min-w-[220px]">اسم المدرسة</th>
                   <th className="text-right p-3 font-bold whitespace-nowrap min-w-[160px]">الرقم الوزاري</th>
-
-                  <th className="text-right p-3 font-bold whitespace-nowrap min-w-[220px]">الاسم الكامل</th>
                   <th className="text-right p-3 font-bold whitespace-nowrap min-w-[100px]">الجنسية</th>
                   <th className="text-right p-3 font-bold whitespace-nowrap min-w-[100px]">تاريخ الميلاد</th>
                   <th className="text-right p-3 font-bold whitespace-nowrap min-w-[80px]">المرحلة</th>
@@ -280,12 +279,11 @@ export default function BasicInfoTab() {
                       />
                     </td>
 
+                    <td className="p-3 font-semibold text-gray-900 whitespace-nowrap">{student.full_name || '-'}</td>
                     <td className="p-3 text-gray-600 font-mono whitespace-nowrap">{student.national_id || '-'}</td>
                     <td className="p-3 text-gray-700 font-mono whitespace-nowrap">{student.school_code || '-'}</td>
                     <td className="p-3 text-gray-700 whitespace-nowrap">{student.school_name || '-'}</td>
                     <td className="p-3 text-gray-700 font-mono whitespace-nowrap">{student.school_code_ministry || '-'}</td>
-
-                    <td className="p-3 font-semibold text-gray-900 whitespace-nowrap">{student.full_name || '-'}</td>
                     <td className="p-3 text-gray-700 whitespace-nowrap">{student.nationality || '-'}</td>
                     <td className="p-3 text-gray-600 whitespace-nowrap">{student.birth_date || '-'}</td>
 
