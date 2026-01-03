@@ -131,7 +131,7 @@ export default function ExcelViewerTab() {
         header: 1,
         defval: "",
         blankrows: false,
-        raw: false,
+        raw: true, // ✅ مهم جداً للحفاظ على أرقام الهوية الطويلة
       });
 
       if (!aoa.length) throw new Error("الشيت فارغ");
