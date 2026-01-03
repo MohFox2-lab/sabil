@@ -19,18 +19,20 @@ export default function BasicInfoTab() {
   const [deleteProgress, setDeleteProgress] = useState(0);
 
   const [formData, setFormData] = useState({
+    student_id: '',
     national_id: '',
     full_name: '',
     nationality: 'سعودي',
     birth_date: '',
     place_of_birth: '',
 
+    // ✅ حقول المدرسة (المطلوبة عندك)
     school_code: '',
     school_name: '',
     school_code_ministry: '',
 
-    grade_level: '',
-    grade_class: '',
+    grade_level: 'متوسط',
+    grade_class: 1,
     class_division: '',
     residential_address: '',
     city: '',
@@ -57,6 +59,7 @@ export default function BasicInfoTab() {
       setShowForm(false);
       setEditingStudent(null);
       setFormData({
+        student_id: '',
         national_id: '',
         full_name: '',
         nationality: 'سعودي',
@@ -67,8 +70,8 @@ export default function BasicInfoTab() {
         school_name: '',
         school_code_ministry: '',
 
-        grade_level: '',
-        grade_class: '',
+        grade_level: 'متوسط',
+        grade_class: 1,
         class_division: '',
         residential_address: '',
         city: '',
@@ -142,18 +145,20 @@ export default function BasicInfoTab() {
   const handleEdit = (student) => {
     setEditingStudent(student);
     setFormData({
+      student_id: student.student_id || '',
       national_id: student.national_id || '',
       full_name: student.full_name || '',
       nationality: student.nationality || 'سعودي',
       birth_date: student.birth_date || '',
       place_of_birth: student.place_of_birth || '',
 
+      // ✅ تحميل حقول المدرسة
       school_code: student.school_code || '',
       school_name: student.school_name || '',
       school_code_ministry: student.school_code_ministry || '',
 
-      grade_level: student.grade_level || '',
-      grade_class: student.grade_class || '',
+      grade_level: student.grade_level || 'متوسط',
+      grade_class: student.grade_class ?? 1,
       class_division: student.class_division || '',
       residential_address: student.residential_address || '',
       city: student.city || '',
@@ -169,7 +174,7 @@ export default function BasicInfoTab() {
   };
 
   const filteredStudents = students.filter(s =>
-    (s.full_name || '').includes(searchTerm) || (s.national_id || '').includes(searchTerm)
+    (s.full_name || '').includes(searchTerm) || (s.student_id || '').includes(searchTerm) || (s.national_id || '').includes(searchTerm)
   );
 
   const handleSelectAll = (checked) => {
@@ -248,13 +253,15 @@ export default function BasicInfoTab() {
                     />
                   </th>
 
-                  <th className="text-right p-3 font-bold whitespace-nowrap min-w-[220px]">الاسم الكامل</th>
+                  <th className="text-right p-3 font-bold whitespace-nowrap min-w-[120px]">رقم الطالب</th>
                   <th className="text-right p-3 font-bold whitespace-nowrap min-w-[150px]">رقم الهوية</th>
 
-                  {/* أعمدة المدرسة */}
+                  {/* ✅ أعمدة المدرسة */}
                   <th className="text-right p-3 font-bold whitespace-nowrap min-w-[140px]">معرف المدرسة</th>
                   <th className="text-right p-3 font-bold whitespace-nowrap min-w-[220px]">اسم المدرسة</th>
                   <th className="text-right p-3 font-bold whitespace-nowrap min-w-[160px]">الرقم الوزاري</th>
+
+                  <th className="text-right p-3 font-bold whitespace-nowrap min-w-[220px]">الاسم الكامل</th>
                   <th className="text-right p-3 font-bold whitespace-nowrap min-w-[100px]">الجنسية</th>
                   <th className="text-right p-3 font-bold whitespace-nowrap min-w-[100px]">تاريخ الميلاد</th>
                   <th className="text-right p-3 font-bold whitespace-nowrap min-w-[80px]">المرحلة</th>
@@ -279,11 +286,15 @@ export default function BasicInfoTab() {
                       />
                     </td>
 
-                    <td className="p-3 font-semibold text-gray-900 whitespace-nowrap">{student.full_name || '-'}</td>
+                    <td className="p-3 text-blue-700 font-mono whitespace-nowrap">{student.student_id || '-'}</td>
                     <td className="p-3 text-gray-600 font-mono whitespace-nowrap">{student.national_id || '-'}</td>
+
+                    {/* ✅ هنا الإصلاح الحقيقي */}
                     <td className="p-3 text-gray-700 font-mono whitespace-nowrap">{student.school_code || '-'}</td>
                     <td className="p-3 text-gray-700 whitespace-nowrap">{student.school_name || '-'}</td>
                     <td className="p-3 text-gray-700 font-mono whitespace-nowrap">{student.school_code_ministry || '-'}</td>
+
+                    <td className="p-3 font-semibold text-gray-900 whitespace-nowrap">{student.full_name || '-'}</td>
                     <td className="p-3 text-gray-700 whitespace-nowrap">{student.nationality || '-'}</td>
                     <td className="p-3 text-gray-600 whitespace-nowrap">{student.birth_date || '-'}</td>
 
@@ -347,13 +358,24 @@ export default function BasicInfoTab() {
 
             <CardContent className="p-6">
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label>رقم الهوية / الإقامة</Label>
-                  <Input
-                    value={formData.national_id}
-                    onChange={(e) => setFormData({ ...formData, national_id: e.target.value })}
-                    maxLength={10}
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>رقم الطالب *</Label>
+                    <Input
+                      required
+                      value={formData.student_id}
+                      onChange={(e) => setFormData({ ...formData, student_id: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>رقم الهوية / الإقامة</Label>
+                    <Input
+                      value={formData.national_id}
+                      onChange={(e) => setFormData({ ...formData, national_id: e.target.value })}
+                      maxLength={10}
+                    />
+                  </div>
                 </div>
 
                 {/* ✅ حقول المدرسة */}
@@ -417,16 +439,15 @@ export default function BasicInfoTab() {
 
                 <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label>المرحلة</Label>
+                    <Label>المرحلة *</Label>
                     <Select
                       value={formData.grade_level}
                       onValueChange={(value) => setFormData({ ...formData, grade_level: value })}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="اختر المرحلة" />
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value={null}>بدون</SelectItem>
                         <SelectItem value="ابتدائي">ابتدائي</SelectItem>
                         <SelectItem value="متوسط">متوسط</SelectItem>
                         <SelectItem value="ثانوي">ثانوي</SelectItem>
@@ -435,13 +456,14 @@ export default function BasicInfoTab() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>الصف</Label>
+                    <Label>الصف *</Label>
                     <Input
                       type="number"
+                      required
                       min="1"
                       max="12"
                       value={formData.grade_class}
-                      onChange={(e) => setFormData({ ...formData, grade_class: e.target.value })}
+                      onChange={(e) => setFormData({ ...formData, grade_class: parseInt(e.target.value) })}
                     />
                   </div>
 
