@@ -90,32 +90,50 @@ export default function BasicInfoTab() {
 
   const deleteMultipleStudents = useMutation({
     mutationFn: async (ids) => {
-      const batchSize = 20; // زيادة حجم الدفعة
+      const batchSize = 5; // دفعات صغيرة لتجنب rate limit
       const total = ids.length;
       let deleted = 0;
+      const failed = [];
       
       for (let i = 0; i < ids.length; i += batchSize) {
         const batch = ids.slice(i, i + batchSize);
-        await Promise.all(batch.map(id => base44.entities.Student.delete(id)));
-        deleted += batch.length;
-        setDeleteProgress(Math.round((deleted / total) * 100));
         
-        // تأخير صغير بين الدفعات
+        // حذف الدفعة الحالية واحدة تلو الأخرى
+        for (const id of batch) {
+          try {
+            await base44.entities.Student.delete(id);
+            deleted++;
+            setDeleteProgress(Math.round((deleted / total) * 100));
+            // تأخير بسيط بين كل عملية حذف
+            await new Promise(resolve => setTimeout(resolve, 200));
+          } catch (err) {
+            failed.push(id);
+          }
+        }
+        
+        // تأخير إضافي بين الدفعات
         if (i + batchSize < ids.length) {
-          await new Promise(resolve => setTimeout(resolve, 300));
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
       }
+      
+      return { deleted, failed, total };
     },
     onMutate: () => {
       setIsDeleting(true);
       setDeleteProgress(0);
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['students'] });
       setSelectedStudents([]);
       setIsDeleting(false);
       setDeleteProgress(0);
-      alert('تم حذف الطلاب بنجاح ✅');
+      
+      if (result.failed.length === 0) {
+        alert(`تم حذف جميع الطلاب بنجاح ✅ (${result.deleted})`);
+      } else {
+        alert(`تم حذف ${result.deleted} من ${result.total} طالب\nفشل حذف ${result.failed.length} طالب`);
+      }
     },
     onError: (error) => {
       setIsDeleting(false);
