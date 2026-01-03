@@ -214,8 +214,11 @@ export default function ViewEditStudentsTab() {
                   <tr>
                     <th className="text-right p-3 font-semibold text-sm border-b">#</th>
                     <th className="text-right p-3 font-semibold text-sm border-b">رقم الطالب</th>
-                    <th className="text-right p-3 font-semibold text-sm border-b">الاسم الكامل</th>
                     <th className="text-right p-3 font-semibold text-sm border-b">رقم الهوية</th>
+                    <th className="text-right p-3 font-semibold text-sm border-b">الاسم الأول</th>
+                    <th className="text-right p-3 font-semibold text-sm border-b">اسم الأب</th>
+                    <th className="text-right p-3 font-semibold text-sm border-b">اسم الجد</th>
+                    <th className="text-right p-3 font-semibold text-sm border-b">اسم العائلة</th>
                     <th className="text-right p-3 font-semibold text-sm border-b">المرحلة</th>
                     <th className="text-right p-3 font-semibold text-sm border-b">الصف</th>
                     <th className="text-right p-3 font-semibold text-sm border-b">الشعبة</th>
@@ -243,16 +246,41 @@ export default function ViewEditStudentsTab() {
                             </td>
                             <td className="p-3">
                               <Input
-                                value={editForm.full_name || ''}
-                                onChange={(e) => setEditForm({...editForm, full_name: e.target.value})}
+                                value={editForm.national_id || ''}
+                                onChange={(e) => setEditForm({...editForm, national_id: e.target.value})}
                                 className="text-sm"
                               />
                             </td>
                             <td className="p-3">
                               <Input
-                                value={editForm.national_id || ''}
-                                onChange={(e) => setEditForm({...editForm, national_id: e.target.value})}
+                                value={editForm.first_name || ''}
+                                onChange={(e) => setEditForm({...editForm, first_name: e.target.value})}
                                 className="text-sm"
+                                placeholder="الاسم الأول"
+                              />
+                            </td>
+                            <td className="p-3">
+                              <Input
+                                value={editForm.father_name || ''}
+                                onChange={(e) => setEditForm({...editForm, father_name: e.target.value})}
+                                className="text-sm"
+                                placeholder="اسم الأب"
+                              />
+                            </td>
+                            <td className="p-3">
+                              <Input
+                                value={editForm.grandfather_name || ''}
+                                onChange={(e) => setEditForm({...editForm, grandfather_name: e.target.value})}
+                                className="text-sm"
+                                placeholder="اسم الجد"
+                              />
+                            </td>
+                            <td className="p-3">
+                              <Input
+                                value={editForm.family_name || ''}
+                                onChange={(e) => setEditForm({...editForm, family_name: e.target.value})}
+                                className="text-sm"
+                                placeholder="اسم العائلة"
                               />
                             </td>
                             <td className="p-3">
@@ -326,8 +354,11 @@ export default function ViewEditStudentsTab() {
                         ) : (
                           <>
                             <td className="p-3 text-sm">{student.student_id || '-'}</td>
-                            <td className="p-3 text-sm font-medium">{student.full_name || '-'}</td>
                             <td className="p-3 text-sm">{student.national_id || '-'}</td>
+                            <td className="p-3 text-sm font-medium">{student.first_name || '-'}</td>
+                            <td className="p-3 text-sm font-medium">{student.father_name || '-'}</td>
+                            <td className="p-3 text-sm font-medium">{student.grandfather_name || '-'}</td>
+                            <td className="p-3 text-sm font-medium">{student.family_name || '-'}</td>
                             <td className="p-3 text-sm">
                               <Badge className="bg-blue-600">{student.grade_level || '-'}</Badge>
                             </td>

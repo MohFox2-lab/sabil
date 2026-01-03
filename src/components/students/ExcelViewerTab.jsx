@@ -249,13 +249,43 @@ export default function ExcelViewerTab() {
             const keyLower = String(key).toLowerCase().trim();
             const val = String(value || '').trim();
             
-            // تخطي القيم الفارغة والقيم الرقمية الصغيرة (قد تكون أرقام صفوف)
-            if (!val || (val.length < 2 && !isNaN(val))) continue;
+            if (!val) continue;
             
-            // الاسم الكامل - البحث عن أي عمود يحتوي على "اسم" وليس "معرف" أو "مدرسة"
-            if (!fullName && keyLower.includes('اسم') && !keyLower.includes('مدرس') && !keyLower.includes('معرف')) {
-              // التحقق من أن القيمة نص وليست رقم
-              if (isNaN(val) || val.length > 10) {
+            // الاسم الأول
+            if (!firstName && (keyLower.includes('أول') || keyLower.includes('اول') || keyLower.includes('first'))) {
+              if (isNaN(val) || val.length > 2) {
+                firstName = val;
+                continue;
+              }
+            }
+            
+            // اسم الأب
+            if (!fatherName && (keyLower.includes('أب') || keyLower.includes('اب') || keyLower.includes('second') || keyLower.includes('father'))) {
+              if (isNaN(val) || val.length > 2) {
+                fatherName = val;
+                continue;
+              }
+            }
+            
+            // اسم الجد
+            if (!grandfatherName && (keyLower.includes('جد') || keyLower.includes('third') || keyLower.includes('grandfather'))) {
+              if (isNaN(val) || val.length > 2) {
+                grandfatherName = val;
+                continue;
+              }
+            }
+            
+            // اسم العائلة
+            if (!familyName && (keyLower.includes('عائل') || keyLower.includes('عايل') || keyLower.includes('family') || keyLower.includes('last'))) {
+              if (isNaN(val) || val.length > 2) {
+                familyName = val;
+                continue;
+              }
+            }
+            
+            // الاسم الكامل
+            if (!fullName && (keyLower.includes('كامل') || keyLower === 'اسم' || keyLower === 'full_name')) {
+              if (isNaN(val) || val.length > 5) {
                 fullName = val;
                 continue;
               }
@@ -267,9 +297,15 @@ export default function ExcelViewerTab() {
               continue;
             }
             
-            // رقم الهوية
-            if (!nationalId && (keyLower.includes('هوية') || keyLower.includes('هويه') || keyLower === 'national_id')) {
+            // رقم الهوية / Identification
+            if (!nationalId && (keyLower.includes('هوية') || keyLower.includes('هويه') || keyLower.includes('identification') || keyLower === 'national_id')) {
               nationalId = val;
+              continue;
+            }
+            
+            // معرف المدرسة / School code
+            if (!schoolCode && (keyLower.includes('معرف') || (keyLower.includes('school') && keyLower.includes('code')))) {
+              schoolCode = val;
               continue;
             }
             
@@ -291,12 +327,6 @@ export default function ExcelViewerTab() {
               continue;
             }
             
-            // معرف المدرسة
-            if (!schoolCode && keyLower.includes('معرف') && keyLower.includes('مدرس')) {
-              schoolCode = val;
-              continue;
-            }
-            
             // اسم المدرسة
             if (!schoolName && keyLower.includes('مدرس') && keyLower.includes('اسم')) {
               schoolName = val;
@@ -310,21 +340,20 @@ export default function ExcelViewerTab() {
             }
           }
           
-          // إذا لم نجد اسم بعد، نبحث عن أول عمود يحتوي على نص طويل (أكثر من 5 أحرف)
+          // تجميع الاسم الكامل من الأجزاء إذا كانت موجودة
           if (!fullName) {
-            for (const val of allValues) {
-              const valStr = String(val).trim();
-              if (valStr.length > 5 && isNaN(valStr)) {
-                fullName = valStr;
-                break;
-              }
-            }
+            const nameParts = [firstName, fatherName, grandfatherName, familyName].filter(Boolean);
+            fullName = nameParts.join(' ');
           }
           
           const studentData = {
             student_id: studentId,
-            full_name: fullName,
             national_id: nationalId,
+            first_name: firstName,
+            father_name: fatherName,
+            grandfather_name: grandfatherName,
+            family_name: familyName,
+            full_name: fullName,
             grade_level: gradeLevel || 'متوسط',
             grade_class: parseInt(gradeClass) || 1,
             class_division: classDivision,
@@ -337,7 +366,7 @@ export default function ExcelViewerTab() {
           };
           
           // حفظ السجل إذا كان فيه اسم على الأقل
-          if (studentData.full_name) {
+          if (studentData.full_name || firstName) {
             await base44.entities.Student.create(studentData);
             success++;
           } else {
