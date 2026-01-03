@@ -158,7 +158,7 @@ export default function ImportWizardTab() {
       
       // Auto-map obvious columns
       const autoMapping = {};
-      headers.forEach(h => {
+      firstSheet.headers.forEach(h => {
         const lower = h.toLowerCase();
         if (lower.includes('رقم الطالب') || lower === 'student_id') autoMapping[h] = 'student_id';
         else if (lower.includes('اسم الأول') || lower.includes('first')) autoMapping[h] = 'first_name';
