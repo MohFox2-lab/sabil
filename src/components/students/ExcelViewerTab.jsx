@@ -74,6 +74,8 @@ export default function ExcelViewerTab() {
   const [allSheets, setAllSheets] = useState([]); // [{name, headers, rows}]
   const [activeSheet, setActiveSheet] = useState("");
   const [search, setSearch] = useState("");
+  
+  const queryClient = useQueryClient();
 
 
 
@@ -258,14 +260,17 @@ export default function ExcelViewerTab() {
       }
       
       setStatus(`✅ تم الحفظ: ${success} نجح | ${failed} فشل`);
-      
-    } catch (err) {
+
+      // تحديث قائمة الطلاب في جميع الواجهات
+      queryClient.invalidateQueries({ queryKey: ['students'] });
+
+      } catch (err) {
       console.error(err);
       setStatus(`❌ فشل الحفظ: ${err?.message}`);
-    } finally {
+      } finally {
       setLoading(false);
-    }
-  };
+      }
+      };
 
   return (
     <div className="space-y-4">
