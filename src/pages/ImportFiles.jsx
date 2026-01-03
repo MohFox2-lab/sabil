@@ -175,40 +175,85 @@ export default function ImportFiles() {
             }
           });
 
+          // تجاهل الصفوف الفارغة تماماً فقط
           const allValues = Object.values(obj).filter(v => v && v !== '');
           if (allValues.length === 0) continue;
 
+          // البحث الذكي عن أي حقل يحتوي على نص (اسم)
           let firstName = '', fatherName = '', grandfatherName = '', familyName = '';
           let fullName = '', studentId = '', nationalId = '';
           let gradeLevel = '', gradeClass = '', classDivision = '';
           let guardianName = '', guardianPhone = '', studentPhone = '';
 
+          // استخراج البيانات من جميع الأعمدة
           for (const [key, value] of Object.entries(obj)) {
             if (!value) continue;
             const k = key.toLowerCase();
             
-            if (!firstName && (k.includes('أول') || k.includes('اول') || k.includes('first'))) firstName = value;
-            else if (!fatherName && (k.includes('أب') || k.includes('اب') || k.includes('father'))) fatherName = value;
-            else if (!grandfatherName && k.includes('جد')) grandfatherName = value;
-            else if (!familyName && (k.includes('عائل') || k.includes('family'))) familyName = value;
-            else if (!fullName && (k.includes('كامل') || k === 'اسم')) fullName = value;
-            else if (!studentId && k.includes('رقم') && k.includes('طالب')) studentId = value;
-            else if (!nationalId && k.includes('هوي')) nationalId = value;
-            else if (!gradeLevel && k.includes('مرحل')) gradeLevel = value;
-            else if (!gradeClass && k.includes('صف')) gradeClass = value;
-            else if (!classDivision && k.includes('شعب')) classDivision = value;
-            else if (!guardianName && k.includes('ولي')) guardianName = value;
-            else if (!guardianPhone && k.includes('جوال') && k.includes('ولي')) guardianPhone = value;
-            else if (!studentPhone && k.includes('جوال') && k.includes('طالب')) studentPhone = value;
+            // البحث عن الأسماء
+            if (!firstName && (k.includes('أول') || k.includes('اول') || k.includes('first') || k.includes('الاسم'))) {
+              firstName = value;
+            }
+            else if (!fatherName && (k.includes('أب') || k.includes('اب') || k.includes('father') || k.includes('الثاني'))) {
+              fatherName = value;
+            }
+            else if (!grandfatherName && (k.includes('جد') || k.includes('الثالث'))) {
+              grandfatherName = value;
+            }
+            else if (!familyName && (k.includes('عائل') || k.includes('عايل') || k.includes('family') || k.includes('الرابع'))) {
+              familyName = value;
+            }
+            else if (!fullName && (k.includes('كامل') || k.includes('الاسم الكامل') || k === 'اسم' || k === 'الاسم')) {
+              fullName = value;
+            }
+            // أرقام
+            else if (!studentId && (k.includes('رقم') || k.includes('طالب') || k.includes('student'))) {
+              studentId = value;
+            }
+            else if (!nationalId && (k.includes('هوي') || k.includes('identification'))) {
+              nationalId = value;
+            }
+            // معلومات الصف
+            else if (!gradeLevel && k.includes('مرحل')) {
+              gradeLevel = value;
+            }
+            else if (!gradeClass && k.includes('صف')) {
+              gradeClass = value;
+            }
+            else if (!classDivision && k.includes('شعب')) {
+              classDivision = value;
+            }
+            // ولي الأمر
+            else if (!guardianName && k.includes('ولي')) {
+              guardianName = value;
+            }
+            else if (!guardianPhone && k.includes('جوال') && k.includes('ولي')) {
+              guardianPhone = value;
+            }
+            else if (!studentPhone && k.includes('جوال') && k.includes('طالب')) {
+              studentPhone = value;
+            }
           }
 
-          if (!fullName) fullName = [firstName, fatherName, grandfatherName, familyName].filter(Boolean).join(' ');
+          // إذا لم نجد أي اسم في الأعمدة المحددة، نأخذ أول قيمة نصية
+          if (!fullName && !firstName) {
+            const firstTextValue = Object.values(obj).find(v => v && isNaN(v) && v.length > 2);
+            if (firstTextValue) {
+              fullName = firstTextValue;
+            }
+          }
 
-          if (fullName || firstName) {
+          // بناء الاسم الكامل من الأجزاء
+          if (!fullName) {
+            fullName = [firstName, fatherName, grandfatherName, familyName].filter(Boolean).join(' ');
+          }
+
+          // حفظ الطالب إذا كان هناك أي اسم
+          if (fullName || firstName || allValues.length > 0) {
             students.push({
               student_id: studentId,
               national_id: nationalId,
-              full_name: fullName,
+              full_name: fullName || firstName,
               first_name: firstName,
               father_name: fatherName,
               grandfather_name: grandfatherName,
