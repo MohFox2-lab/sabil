@@ -61,125 +61,6 @@ export default function ImportFiles() {
     setStatus('');
   };
 
-  const readExcelFile = async (file) => {
-    const XLSX = await ensureXLSX();
-    const buf = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onerror = () => reject(reader.error || new Error("تعذر قراءة الملف"));
-      reader.onload = () => resolve(reader.result);
-      reader.readAsArrayBuffer(file);
-    });
-
-    const wb = XLSX.read(buf, { type: "array", raw: true });
-    if (!wb.SheetNames?.length) throw new Error("الملف لا يحتوي أي شيت");
-
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "", raw: true });
-    if (!aoa.length) return [];
-
-    const headers = aoa[0].map(h => String(h || '').trim().toLowerCase());
-    const dataRows = aoa.slice(1);
-
-    const students = [];
-    for (const row of dataRows) {
-      const obj = {};
-      headers.forEach((h, idx) => {
-        const val = row[idx];
-        if (typeof val === 'number' && val > 999999999) {
-          obj[h] = val.toFixed(0);
-        } else {
-          obj[h] = String(val ?? "").trim();
-        }
-      });
-
-      const allValues = Object.values(obj).filter(v => v && v !== '');
-      if (allValues.length === 0) continue;
-
-      let firstName = '', fatherName = '', grandfatherName = '', familyName = '';
-      let fullName = '', studentId = '', nationalId = '';
-      let gradeLevel = '', gradeClass = '', classDivision = '';
-      let guardianName = '', guardianPhone = '', studentPhone = '';
-
-      for (const [key, value] of Object.entries(obj)) {
-        if (!value) continue;
-        
-        if (!firstName && (key.includes('أول') || key.includes('اول') || key.includes('first'))) {
-          if (isNaN(value) || value.length > 2) firstName = value;
-        }
-        if (!fatherName && (key.includes('أب') || key.includes('اب') || key.includes('second') || key.includes('father'))) {
-          if (isNaN(value) || value.length > 2) fatherName = value;
-        }
-        if (!grandfatherName && (key.includes('جد') || key.includes('third') || key.includes('grandfather'))) {
-          if (isNaN(value) || value.length > 2) grandfatherName = value;
-        }
-        if (!familyName && (key.includes('عائل') || key.includes('عايل') || key.includes('family') || key.includes('last'))) {
-          if (isNaN(value) || value.length > 2) familyName = value;
-        }
-        if (!fullName && (key.includes('كامل') || key === 'اسم' || key.includes('full_name'))) {
-          if (isNaN(value) || value.length > 5) fullName = value;
-        }
-        if (!studentId && key.includes('رقم') && key.includes('طالب')) studentId = value;
-        if (!nationalId && (key.includes('هوية') || key.includes('هويه') || key.includes('identification'))) nationalId = value;
-        if (!gradeLevel && key.includes('مرحل')) gradeLevel = value;
-        if (!gradeClass && key === 'صف') gradeClass = value;
-        if (!classDivision && key.includes('شعب')) classDivision = value;
-        if (!guardianName && key.includes('ولي')) guardianName = value;
-        if (!guardianPhone && key.includes('جوال') && key.includes('ولي')) guardianPhone = value;
-        if (!studentPhone && key.includes('جوال') && key.includes('طالب')) studentPhone = value;
-      }
-
-      if (!fullName) {
-        fullName = [firstName, fatherName, grandfatherName, familyName].filter(Boolean).join(' ');
-      }
-
-      if (fullName || firstName) {
-        students.push({
-          student_id: studentId,
-          national_id: nationalId,
-          full_name: fullName,
-          first_name: firstName,
-          father_name: fatherName,
-          grandfather_name: grandfatherName,
-          family_name: familyName,
-          grade_level: gradeLevel || 'متوسط',
-          grade_class: parseInt(gradeClass) || 1,
-          class_division: classDivision,
-          guardian_name: guardianName,
-          guardian_phone: guardianPhone,
-          student_phone: studentPhone
-        });
-      }
-    }
-    return students;
-  };
-
-  const readTextFile = async (file) => {
-    const text = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onerror = () => reject(reader.error || new Error("تعذر قراءة الملف"));
-      reader.onload = () => resolve(reader.result);
-      reader.readAsText(file, 'utf-8');
-    });
-
-    const lines = text.split('\n').filter(l => l.trim());
-    const students = [];
-    
-    for (const line of lines) {
-      const parts = line.split(/[,\t|]/).map(p => p.trim()).filter(Boolean);
-      if (parts.length >= 2) {
-        students.push({
-          full_name: parts[0] || '',
-          student_id: parts[1] || '',
-          national_id: parts[2] || '',
-          grade_level: parts[3] || 'متوسط',
-          grade_class: parseInt(parts[4]) || 1,
-          guardian_phone: parts[5] || ''
-        });
-      }
-    }
-    return students;
-  };
-
   const handleUploadAndExtract = async () => {
     if (!selectedFile) {
       setStatus('❌ الرجاء اختيار ملف أولاً');
@@ -187,35 +68,133 @@ export default function ImportFiles() {
     }
 
     setLoading(true);
-    setStatus('⏳ جاري قراءة الملف محلياً...');
+    setStatus('⏳ جاري قراءة الملف...');
 
     try {
-      let students = [];
       const fileName = selectedFile.name.toLowerCase();
 
-      if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls') || fileName.endsWith('.csv')) {
-        students = await readExcelFile(selectedFile);
-      } else if (fileName.endsWith('.txt') || fileName.endsWith('.csv')) {
-        students = await readTextFile(selectedFile);
-      } else if (fileName.endsWith('.pdf') || fileName.endsWith('.docx') || fileName.endsWith('.doc')) {
-        setStatus('❌ عذراً، ملفات PDF و Word تحتاج مكتبات إضافية. استخدم Excel أو Text');
-        setLoading(false);
-        return;
-      } else {
-        setStatus('❌ صيغة الملف غير مدعومة');
-        setLoading(false);
-        return;
-      }
+      // Excel files
+      if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+        const buf = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onerror = () => reject(reader.error || new Error("تعذر قراءة الملف"));
+          reader.onload = () => resolve(reader.result);
+          reader.readAsArrayBuffer(selectedFile);
+        });
 
-      if (students.length > 0) {
+        const XLSX = await ensureXLSX();
+        const wb = XLSX.read(buf, { type: "array", raw: true });
+        if (!wb.SheetNames?.length) throw new Error("الملف لا يحتوي أي شيت");
+
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "", raw: true });
+        if (!aoa.length) throw new Error("الشيت فارغ");
+
+        const headers = aoa[0].map((h, i) => {
+          const t = String(h || '').trim();
+          return t || `عمود_${i + 1}`;
+        });
+
+        const students = [];
+        for (let i = 1; i < aoa.length; i++) {
+          const row = aoa[i];
+          const obj = {};
+          headers.forEach((h, idx) => {
+            const val = row[idx];
+            if (typeof val === 'number' && val > 999999999) {
+              obj[h] = val.toFixed(0);
+            } else {
+              obj[h] = String(val ?? "").trim();
+            }
+          });
+
+          const allValues = Object.values(obj).filter(v => v && v !== '');
+          if (allValues.length === 0) continue;
+
+          let firstName = '', fatherName = '', grandfatherName = '', familyName = '';
+          let fullName = '', studentId = '', nationalId = '';
+          let gradeLevel = '', gradeClass = '', classDivision = '';
+          let guardianName = '', guardianPhone = '', studentPhone = '';
+
+          for (const [key, value] of Object.entries(obj)) {
+            if (!value) continue;
+            const k = key.toLowerCase();
+            
+            if (!firstName && (k.includes('أول') || k.includes('اول') || k.includes('first'))) firstName = value;
+            else if (!fatherName && (k.includes('أب') || k.includes('اب') || k.includes('father'))) fatherName = value;
+            else if (!grandfatherName && k.includes('جد')) grandfatherName = value;
+            else if (!familyName && (k.includes('عائل') || k.includes('family'))) familyName = value;
+            else if (!fullName && (k.includes('كامل') || k === 'اسم')) fullName = value;
+            else if (!studentId && k.includes('رقم') && k.includes('طالب')) studentId = value;
+            else if (!nationalId && k.includes('هوي')) nationalId = value;
+            else if (!gradeLevel && k.includes('مرحل')) gradeLevel = value;
+            else if (!gradeClass && k.includes('صف')) gradeClass = value;
+            else if (!classDivision && k.includes('شعب')) classDivision = value;
+            else if (!guardianName && k.includes('ولي')) guardianName = value;
+            else if (!guardianPhone && k.includes('جوال') && k.includes('ولي')) guardianPhone = value;
+            else if (!studentPhone && k.includes('جوال') && k.includes('طالب')) studentPhone = value;
+          }
+
+          if (!fullName) fullName = [firstName, fatherName, grandfatherName, familyName].filter(Boolean).join(' ');
+
+          if (fullName || firstName) {
+            students.push({
+              student_id: studentId,
+              national_id: nationalId,
+              full_name: fullName,
+              first_name: firstName,
+              father_name: fatherName,
+              grandfather_name: grandfatherName,
+              family_name: familyName,
+              grade_level: gradeLevel || 'متوسط',
+              grade_class: parseInt(gradeClass) || 1,
+              class_division: classDivision,
+              guardian_name: guardianName,
+              guardian_phone: guardianPhone,
+              student_phone: studentPhone
+            });
+          }
+        }
+
         setExtractedData(students);
-        setStatus(`✅ تم قراءة ${students.length} سجل بنجاح من الملف`);
-      } else {
-        setStatus('⚠️ لم يتم العثور على بيانات في الملف');
+        setStatus(`✅ تم قراءة ${students.length} سجل من Excel`);
+      }
+      // Text/CSV files
+      else if (fileName.endsWith('.txt') || fileName.endsWith('.csv')) {
+        const text = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onerror = () => reject(reader.error);
+          reader.onload = () => resolve(reader.result);
+          reader.readAsText(selectedFile, 'utf-8');
+        });
+
+        const lines = text.split('\n').filter(l => l.trim());
+        const students = [];
+        
+        for (const line of lines.slice(1)) {
+          const parts = line.split(/[,\t|]/).map(p => p.trim());
+          if (parts.length >= 2 && parts[0]) {
+            students.push({
+              full_name: parts[0],
+              student_id: parts[1] || '',
+              national_id: parts[2] || '',
+              grade_level: parts[3] || 'متوسط',
+              grade_class: parseInt(parts[4]) || 1,
+              guardian_phone: parts[5] || ''
+            });
+          }
+        }
+
+        setExtractedData(students);
+        setStatus(`✅ تم قراءة ${students.length} سجل من Text`);
+      }
+      // PDF/Word - not supported offline
+      else {
+        setStatus('⚠️ هذه الصيغة غير مدعومة حالياً. استخدم Excel (.xlsx) أو Text (.txt)');
       }
     } catch (err) {
       console.error(err);
-      setStatus(`❌ خطأ: ${err?.message || 'فشل في معالجة الملف'}`);
+      setStatus(`❌ خطأ: ${err?.message || 'فشل في قراءة الملف'}`);
     } finally {
       setLoading(false);
     }
