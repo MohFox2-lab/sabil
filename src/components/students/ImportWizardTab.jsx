@@ -22,9 +22,9 @@ import {
 } from 'lucide-react';
 
 const STUDENT_ATTRIBUTES = [
-  { value: 'student_id', label: 'رقم الطالب *', required: true },
+  { value: 'student_id', label: 'رقم الطالب' },
   { value: 'national_id', label: 'رقم الهوية/الإقامة' },
-  { value: 'full_name', label: 'الاسم الكامل *', required: true },
+  { value: 'full_name', label: 'الاسم الكامل' },
   { value: 'first_name', label: 'الاسم الأول' },
   { value: 'father_name', label: 'اسم الأب' },
   { value: 'grandfather_name', label: 'اسم الجد' },
@@ -35,8 +35,8 @@ const STUDENT_ATTRIBUTES = [
   { value: 'school_code', label: 'معرف المدرسة' },
   { value: 'school_name', label: 'اسم المدرسة' },
   { value: 'school_code_ministry', label: 'الرقم الوزاري' },
-  { value: 'grade_level', label: 'المرحلة *', required: true },
-  { value: 'grade_class', label: 'الصف *', required: true },
+  { value: 'grade_level', label: 'المرحلة' },
+  { value: 'grade_class', label: 'الصف' },
   { value: 'class_division', label: 'الشعبة' },
   { value: 'residential_address', label: 'عنوان السكن' },
   { value: 'city', label: 'المدينة' },
