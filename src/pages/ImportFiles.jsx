@@ -5,6 +5,11 @@ import { Badge } from '@/components/ui/badge';
 import { Upload, FileText, FileSpreadsheet, FileType, File, AlertCircle, CheckCircle2, Download } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useQueryClient } from '@tanstack/react-query';
+import * as pdfjsLib from 'pdfjs-dist';
+import mammoth from 'mammoth';
+
+// Configure PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
 
 async function ensureXLSX() {
   if (window.XLSX) return window.XLSX;
@@ -59,6 +64,68 @@ export default function ImportFiles() {
     });
     setExtractedData(null);
     setStatus('');
+  };
+
+  const readPDFFile = async (file) => {
+    const arrayBuffer = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(reader.error);
+      reader.onload = () => resolve(reader.result);
+      reader.readAsArrayBuffer(file);
+    });
+
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let fullText = '';
+
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items.map(item => item.str).join(' ');
+      fullText += pageText + '\n';
+    }
+
+    return parseTextToStudents(fullText);
+  };
+
+  const readWordFile = async (file) => {
+    const arrayBuffer = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(reader.error);
+      reader.onload = () => resolve(reader.result);
+      reader.readAsArrayBuffer(file);
+    });
+
+    const result = await mammoth.extractRawText({ arrayBuffer });
+    return parseTextToStudents(result.value);
+  };
+
+  const parseTextToStudents = (text) => {
+    const lines = text.split('\n').filter(l => l.trim());
+    const students = [];
+
+    for (const line of lines) {
+      const parts = line.split(/[\s,\t|]+/).filter(Boolean);
+      if (parts.length >= 2) {
+        const firstName = parts[0] || '';
+        const fatherName = parts[1] || '';
+        const grandfatherName = parts[2] || '';
+        const familyName = parts[3] || '';
+        
+        students.push({
+          full_name: [firstName, fatherName, grandfatherName, familyName].filter(Boolean).join(' '),
+          first_name: firstName,
+          father_name: fatherName,
+          grandfather_name: grandfatherName,
+          family_name: familyName,
+          student_id: parts.find(p => /^\d{5,}$/.test(p)) || '',
+          national_id: parts.find(p => /^\d{10}$/.test(p)) || '',
+          grade_level: 'متوسط',
+          grade_class: 1
+        });
+      }
+    }
+
+    return students;
   };
 
   const handleUploadAndExtract = async () => {
@@ -188,9 +255,20 @@ export default function ImportFiles() {
         setExtractedData(students);
         setStatus(`✅ تم قراءة ${students.length} سجل من Text`);
       }
-      // PDF/Word - not supported offline
+      // PDF files
+      else if (fileName.endsWith('.pdf')) {
+        const students = await readPDFFile(selectedFile);
+        setExtractedData(students);
+        setStatus(`✅ تم قراءة ${students.length} سجل من PDF`);
+      }
+      // Word files
+      else if (fileName.endsWith('.docx') || fileName.endsWith('.doc')) {
+        const students = await readWordFile(selectedFile);
+        setExtractedData(students);
+        setStatus(`✅ تم قراءة ${students.length} سجل من Word`);
+      }
       else {
-        setStatus('⚠️ هذه الصيغة غير مدعومة حالياً. استخدم Excel (.xlsx) أو Text (.txt)');
+        setStatus('⚠️ صيغة الملف غير مدعومة');
       }
     } catch (err) {
       console.error(err);
@@ -290,7 +368,7 @@ export default function ImportFiles() {
                 <Badge className="bg-gray-600">Text (.txt, .csv)</Badge>
               </div>
               <p className="text-sm text-blue-800 mt-2">
-                💡 يعمل بدون إنترنت - قراءة محلية للملفات (Excel و Text فقط حالياً)
+                💡 يعمل محلياً بدون إنترنت - جميع الصيغ مدعومة (Excel, PDF, Word, Text)
               </p>
             </div>
           </div>
