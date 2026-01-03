@@ -15,6 +15,7 @@ export default function BasicInfoTab() {
   const [editingStudent, setEditingStudent] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStudents, setSelectedStudents] = useState([]);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [formData, setFormData] = useState({
     student_id: '',
@@ -88,15 +89,29 @@ export default function BasicInfoTab() {
 
   const deleteMultipleStudents = useMutation({
     mutationFn: async (ids) => {
-      for (const id of ids) {
-        await base44.entities.Student.delete(id);
+      // حذف متوازي باستخدام دفعات لتجنب حمل الخادم
+      const batchSize = 50;
+      const batches = [];
+      
+      for (let i = 0; i < ids.length; i += batchSize) {
+        const batch = ids.slice(i, i + batchSize);
+        batches.push(batch);
       }
+      
+      for (const batch of batches) {
+        await Promise.all(batch.map(id => base44.entities.Student.delete(id)));
+      }
+    },
+    onMutate: () => {
+      setIsDeleting(true);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['students'] });
       setSelectedStudents([]);
+      setIsDeleting(false);
     },
     onError: (error) => {
+      setIsDeleting(false);
       alert(`حدث خطأ أثناء الحذف: ${error.message}`);
     }
   });
