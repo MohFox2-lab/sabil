@@ -122,7 +122,6 @@ export default function ExcelViewerTab() {
         const aoa = XLSX.utils.sheet_to_json(ws, {
           header: 1,
           defval: "",
-          blankrows: false,
           raw: true, // ✅ مهم جداً للحفاظ على أرقام الهوية الطويلة
         });
 
@@ -131,20 +130,22 @@ export default function ExcelViewerTab() {
         const rawHeaders = aoa[0];
         const fixedHeaders = normalizeHeaders(rawHeaders);
 
-        const dataRows = aoa.slice(1).map((arr) => {
-          const obj = {};
-          fixedHeaders.forEach((h, idx) => {
-            const cellValue = arr?.[idx];
-            // ✅ معالجة خاصة للأرقام الطويلة (أرقام الهوية)
-            if (typeof cellValue === 'number' && cellValue > 999999999) {
-              // تحويل الأرقام الطويلة إلى نص بدون تدوين علمي
-              obj[h] = cellValue.toFixed(0);
-            } else {
-              obj[h] = toSafeString(cellValue ?? "");
-            }
+        const dataRows = aoa.slice(1)
+          .filter(arr => arr && arr.length > 0 && arr.some(cell => cell !== null && cell !== undefined && cell !== ''))
+          .map((arr) => {
+            const obj = {};
+            fixedHeaders.forEach((h, idx) => {
+              const cellValue = arr?.[idx];
+              // ✅ معالجة خاصة للأرقام الطويلة (أرقام الهوية)
+              if (typeof cellValue === 'number' && cellValue > 999999999) {
+                // تحويل الأرقام الطويلة إلى نص بدون تدوين علمي
+                obj[h] = cellValue.toFixed(0);
+              } else {
+                obj[h] = toSafeString(cellValue ?? "");
+              }
+            });
+            return obj;
           });
-          return obj;
-        });
 
         return {
           name: sheetName,
@@ -222,12 +223,20 @@ export default function ExcelViewerTab() {
       
       for (const row of currentSheet.rows) {
         try {
+          const fullName = row['الاسم الكامل'] || row['full_name'] || row['الاسم'] || '';
+          const studentId = row['رقم الطالب'] || row['student_id'] || '';
+          
+          // تجاهل الصفوف الفارغة تماماً
+          if (!fullName.trim() && !studentId.trim()) {
+            continue;
+          }
+          
           const studentData = {
-            student_id: row['رقم الطالب'] || row['student_id'] || '',
-            full_name: row['الاسم الكامل'] || row['full_name'] || row['الاسم'] || '',
+            student_id: studentId,
+            full_name: fullName,
             national_id: row['رقم الهوية'] || row['national_id'] || '',
             grade_level: row['المرحلة'] || row['grade_level'] || 'متوسط',
-            grade_class: parseInt(row['الصف'] || row['grade_class'] || '1'),
+            grade_class: parseInt(row['الصف'] || row['grade_class'] || '1') || 1,
             class_division: row['الشعبة'] || row['class_division'] || '',
             school_code: row['معرف المدرسة'] || row['school_code'] || '',
             school_name: row['اسم المدرسة'] || row['school_name'] || '',
@@ -237,7 +246,8 @@ export default function ExcelViewerTab() {
             attendance_score: 100
           };
           
-          if (studentData.full_name) {
+          // الحد الأدنى من المتطلبات: اسم أو رقم طالب
+          if (studentData.full_name.trim() || studentData.student_id.trim()) {
             await base44.entities.Student.create(studentData);
             success++;
           }
