@@ -104,6 +104,13 @@ export default function ImportStudentData() {
 
       for (const studentData of students) {
         try {
+          // تجاهل الصفوف الفارغة تماماً
+          const allValues = Object.values(studentData);
+          const hasAnyData = allValues.some(v => v && v.toString().trim());
+          if (!hasAnyData) {
+            continue; // تخطي الصف الفارغ
+          }
+
           // فهم الحقول الأساسية تلقائياً
           const studentId = autoMapField(studentData, ['UserID', 'userid', 'user_id', 'student_id', 'رقم الطالب', 'الرقم', 'id']);
           const nationalId = autoMapField(studentData, ['Identification', 'identification', 'national_id', 'رقم الهوية', 'الهوية']);
