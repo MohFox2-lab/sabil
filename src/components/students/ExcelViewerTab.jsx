@@ -286,12 +286,12 @@ export default function ExcelViewerTab() {
               </Button>
             </label>
 
-            <Button variant="outline" className="gap-2" onClick={downloadCsv} disabled={!headers.length}>
+            <Button variant="outline" className="gap-2" onClick={downloadCsv} disabled={!currentSheet}>
               <Download className="w-4 h-4" />
               تنزيل CSV
             </Button>
 
-            <Button variant="outline" className="gap-2" onClick={downloadJson} disabled={!headers.length}>
+            <Button variant="outline" className="gap-2" onClick={downloadJson} disabled={!currentSheet}>
               <Download className="w-4 h-4" />
               تنزيل JSON
             </Button>
