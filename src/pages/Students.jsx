@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { 
-  UserCircle, 
   Phone, 
   LogOut,
   FileText,
@@ -13,7 +12,6 @@ import {
   FileCheck,
   FileSpreadsheet
 } from 'lucide-react';
-import BasicInfoTab from '../components/students/BasicInfoTab';
 import ContactInfoTab from '../components/students/ContactInfoTab';
 import StudentReportsTab from '../components/students/StudentReportsTab';
 import ExcuseManagementTab from '../components/students/ExcuseManagementTab';
@@ -34,13 +32,9 @@ export default function Students() {
         <p className="text-gray-600 mt-1">عرض وإدارة بيانات جميع الطلاب</p>
       </div>
 
-      <Tabs defaultValue="basic" className="w-full">
+      <Tabs defaultValue="contact" className="w-full">
         <TabsList className="h-auto flex flex-col gap-2 bg-transparent p-0">
           <div className="flex flex-wrap gap-2 justify-center">
-            <TabsTrigger value="basic" className="gap-2 bg-white border-2 border-blue-300 text-blue-700 data-[state=active]:bg-blue-500 data-[state=active]:text-white data-[state=active]:border-blue-500 px-3 py-2 text-sm">
-              <UserCircle className="w-4 h-4" />
-              <span className="truncate">بيانات أساسية</span>
-            </TabsTrigger>
             <TabsTrigger value="contact" className="gap-2 bg-white border-2 border-emerald-300 text-emerald-700 data-[state=active]:bg-emerald-500 data-[state=active]:text-white data-[state=active]:border-emerald-500 px-3 py-2 text-sm">
               <Phone className="w-4 h-4" />
               <span className="truncate">بيانات الاتصال</span>
@@ -93,10 +87,6 @@ export default function Students() {
             </TabsTrigger>
           </div>
         </TabsList>
-
-        <TabsContent value="basic" className="mt-6">
-          <BasicInfoTab />
-        </TabsContent>
 
         <TabsContent value="contact" className="mt-6">
           <ContactInfoTab />
