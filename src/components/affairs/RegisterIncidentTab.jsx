@@ -95,89 +95,169 @@ export default function RegisterIncidentTab() {
       <html dir="rtl">
       <head>
         <meta charset="UTF-8">
-        <title>محضر مخالفة سلوكية</title>
+        <title>تعهد سلوكي</title>
         <style>
-          body { font-family: Arial, sans-serif; padding: 30px; line-height: 1.6; }
-          .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #0d5d4e; padding-bottom: 20px; }
-          .title { font-size: 24px; font-weight: bold; color: #0d5d4e; margin: 10px 0; }
-          table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-          td { border: 1px solid #333; padding: 12px; font-size: 14px; }
-          .label { background-color: #f0f0f0; font-weight: bold; width: 35%; }
-          .notes-box { border: 1px solid #333; padding: 12px; min-height: 80px; margin: 20px 0; }
-          .signatures { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 30px; margin-top: 60px; text-align: center; }
-          .sig-line { margin-top: 60px; border-bottom: 1px solid #333; }
+          @page { size: A4; margin: 20mm; }
+          body { 
+            font-family: 'Traditional Arabic', 'Arial', sans-serif; 
+            padding: 0;
+            margin: 0;
+            line-height: 1.8;
+          }
+          .container { 
+            max-width: 800px; 
+            margin: 0 auto; 
+            padding: 40px;
+            position: relative;
+          }
+          .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 50px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #000;
+          }
+          .logo-section {
+            text-align: center;
+            font-size: 11px;
+            line-height: 1.4;
+          }
+          .logo-text {
+            font-weight: bold;
+            margin: 3px 0;
+          }
+          .title {
+            text-align: center;
+            font-size: 22px;
+            font-weight: bold;
+            margin: 40px 0 50px 0;
+            text-decoration: underline;
+          }
+          .field-row {
+            margin: 25px 0;
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+          }
+          .field-label {
+            min-width: 150px;
+            font-weight: normal;
+          }
+          .field-value {
+            flex: 1;
+            border-bottom: 1px dotted #000;
+            padding: 0 10px;
+            min-height: 25px;
+          }
+          .commitment-text {
+            margin: 40px 0;
+            font-size: 14px;
+            line-height: 2;
+            text-align: justify;
+          }
+          .signature-table {
+            width: 100%;
+            margin-top: 80px;
+            border-collapse: collapse;
+          }
+          .signature-table td {
+            border: 1px solid #000;
+            padding: 15px;
+            text-align: center;
+            font-size: 13px;
+            height: 50px;
+          }
+          .signature-table th {
+            border: 1px solid #000;
+            padding: 12px;
+            background-color: #f5f5f5;
+            font-weight: bold;
+            font-size: 13px;
+          }
+          @media print {
+            body { padding: 0; }
+            .container { padding: 20px; }
+          }
         </style>
       </head>
       <body>
-        <div class="header">
-          <div style="font-size: 18px; color: #0d5d4e;">وزارة التعليم - المملكة العربية السعودية</div>
-          <div class="title">محضر ضبط مخالفة سلوكية</div>
-          <div style="font-size: 14px; color: #666;">وفق لائحة قواعد السلوك والمواظبة - الإصدار الخامس 1447هـ</div>
-        </div>
-        
-        <table>
-          <tr>
-            <td class="label">اسم الطالب</td>
-            <td>${selectedStudent.full_name}</td>
-          </tr>
-          <tr>
-            <td class="label">رقم الطالب</td>
-            <td>${selectedStudent.student_id}</td>
-          </tr>
-          <tr>
-            <td class="label">المرحلة / الصف / الفصل</td>
-            <td>${selectedStudent.grade_level} - ${selectedStudent.grade_class}${selectedStudent.class_division}</td>
-          </tr>
-          <tr>
-            <td class="label">تاريخ المخالفة</td>
-            <td>${new Date(formData.date).toLocaleDateString('ar-SA')} ${formData.day_of_week ? `(${formData.day_of_week})` : ''}</td>
-          </tr>
-          <tr>
-            <td class="label">نوع المخالفة</td>
-            <td>${selectedMisconduct.title}</td>
-          </tr>
-          <tr>
-            <td class="label">درجة المخالفة</td>
-            <td>الدرجة ${['الأولى', 'الثانية', 'الثالثة', 'الرابعة', 'الخامسة'][selectedMisconduct.degree - 1]}</td>
-          </tr>
-          <tr>
-            <td class="label">مقدار الحسم من درجات السلوك</td>
-            <td style="font-weight: bold; color: red;">${selectedMisconduct.points_deduction} درجة</td>
-          </tr>
-          <tr>
-            <td class="label">رقم الإجراء</td>
-            <td>الإجراء ${['الأول', 'الثاني', 'الثالث', 'الرابع'][formData.procedure_number - 1]}</td>
-          </tr>
-        </table>
-        
-        <div style="margin: 20px 0;">
-          <div style="font-weight: bold; margin-bottom: 10px;">الملاحظات والإجراءات التربوية المتخذة:</div>
-          <div class="notes-box">${formData.actions_taken || ''}</div>
-        </div>
+        <div class="container">
+          <!-- Header with logos -->
+          <div class="header-row">
+            <div class="logo-section">
+              <div class="logo-text">المملكة العربية السعودية</div>
+              <div class="logo-text">وزارة التعليم</div>
+              <div class="logo-text">الإدارة العامة للتعليم</div>
+            </div>
+            
+            <div class="logo-section">
+              <!-- مساحة للشعار المركزي -->
+            </div>
+            
+            <div class="logo-section">
+              <div class="logo-text">المملكة العربية السعودية</div>
+              <div class="logo-text">وزارة التعليم</div>
+            </div>
+          </div>
 
-        ${formData.notes ? `
-          <div style="margin: 20px 0;">
-            <div style="font-weight: bold; margin-bottom: 10px;">ملاحظات إضافية:</div>
-            <div class="notes-box">${formData.notes}</div>
+          <!-- Title -->
+          <div class="title">تعهد سلوكي</div>
+
+          <!-- Student Info -->
+          <div class="field-row">
+            <span class="field-label">أنا الطالب / الطالبة:</span>
+            <span class="field-value">${selectedStudent.full_name}</span>
           </div>
-        ` : ''}
-        
-        <div class="signatures">
-          <div>
-            <p style="font-weight: bold;">ولي أمر الطالب</p>
-            <div class="sig-line"></div>
-            <p style="margin-top: 5px; font-size: 12px;">التوقيع</p>
+
+          <div class="field-row">
+            <span class="field-label">في الصف:</span>
+            <span class="field-value">${selectedStudent.grade_level} - ${selectedStudent.grade_class}${selectedStudent.class_division || ''}</span>
+            <span class="field-label" style="margin-right: 30px;">الجوال:</span>
+            <span class="field-value" style="max-width: 200px;">${selectedStudent.student_phone || '...................'}</span>
           </div>
-          <div>
-            <p style="font-weight: bold;">وكيل شؤون الطلاب</p>
-            <div class="sig-line"></div>
-            <p style="margin-top: 5px; font-size: 12px;">التوقيع</p>
+
+          <div class="field-row">
+            <span class="field-label">بسبب المخالفة في التاريخ:</span>
+            <span class="field-value">${new Date(formData.date).toLocaleDateString('ar-SA')}</span>
           </div>
-          <div>
-            <p style="font-weight: bold;">قائد/قائدة المدرسة</p>
-            <div class="sig-line"></div>
-            <p style="margin-top: 5px; font-size: 12px;">التوقيع والختم</p>
+
+          <!-- Commitment Text -->
+          <div class="commitment-text">
+            أتعهد بعدم تكرار أو ارتكاب مخالفة سلوكية مشابهة، وإلا فقد تطبق بحقي لائحة السلوك والمواظبة.
           </div>
+
+          <!-- Violation Details -->
+          <div class="field-row">
+            <span class="field-label">المخالفة:</span>
+            <span class="field-value">${selectedMisconduct.title}</span>
+          </div>
+
+          <!-- Signatures Table -->
+          <table class="signature-table">
+            <thead>
+              <tr>
+                <th>الطالب/الطالبة</th>
+                <th>ولي الأمر</th>
+                <th>المرشد الطلابي</th>
+                <th>مدير المدرسة</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>الاسم:<br><br>التوقيع:</td>
+                <td>الاسم:<br><br>التوقيع:</td>
+                <td>الاسم:<br><br>التوقيع:</td>
+                <td>الاسم:<br><br>التوقيع:</td>
+              </tr>
+              <tr>
+                <td>التاريخ:<br><br></td>
+                <td>التاريخ:<br><br></td>
+                <td>التاريخ:<br><br></td>
+                <td>التاريخ:<br><br></td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </body>
       </html>

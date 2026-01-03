@@ -95,30 +95,189 @@ export default function BehaviorContractTab() {
   };
 
   const handlePrint = () => {
-    const doc = new jsPDF();
-    
-    doc.text('العقد السلوكي للطالب', 105, 20, { align: 'center' });
-    doc.text(`التاريخ: ${contractData.contract_date}`, 105, 30, { align: 'center' });
-    
-    doc.text(`اسم الطالب: ${contractData.student_name}`, 20, 50);
-    doc.text(`الصف: ${contractData.grade}`, 20, 60);
-    
-    doc.text('وصف المخالفة:', 20, 80);
-    doc.text(contractData.violation_description || '', 20, 90, { maxWidth: 170 });
-    
-    doc.text('بنود العقد السلوكي:', 20, 110);
-    const terms = contractData.contract_terms.split('\n');
-    let y = 120;
-    terms.forEach(term => {
-      if (y > 270) {
-        doc.addPage();
-        y = 20;
-      }
-      doc.text(term, 20, y);
-      y += 10;
-    });
-    
-    doc.save(`عقد-سلوكي-${contractData.student_name}-${contractData.contract_date}.pdf`);
+    if (!contractData.student_name || !contractData.violation_description) {
+      alert('الرجاء إدخال بيانات الطالب ووصف المخالفة');
+      return;
+    }
+
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html dir="rtl">
+      <head>
+        <meta charset="UTF-8">
+        <title>تعهد سلوكي</title>
+        <style>
+          @page { size: A4; margin: 20mm; }
+          body { 
+            font-family: 'Traditional Arabic', 'Arial', sans-serif; 
+            padding: 0;
+            margin: 0;
+            line-height: 1.8;
+          }
+          .container { 
+            max-width: 800px; 
+            margin: 0 auto; 
+            padding: 40px;
+          }
+          .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 50px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #000;
+          }
+          .logo-section {
+            text-align: center;
+            font-size: 11px;
+            line-height: 1.4;
+          }
+          .logo-text {
+            font-weight: bold;
+            margin: 3px 0;
+          }
+          .title {
+            text-align: center;
+            font-size: 22px;
+            font-weight: bold;
+            margin: 40px 0 50px 0;
+            text-decoration: underline;
+          }
+          .field-row {
+            margin: 25px 0;
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+          }
+          .field-label {
+            min-width: 150px;
+          }
+          .field-value {
+            flex: 1;
+            border-bottom: 1px dotted #000;
+            padding: 0 10px;
+            min-height: 25px;
+          }
+          .commitment-text {
+            margin: 40px 0;
+            font-size: 14px;
+            line-height: 2;
+            text-align: justify;
+          }
+          .terms-box {
+            margin: 30px 0;
+            padding: 20px;
+            border: 1px solid #000;
+            min-height: 150px;
+            font-size: 14px;
+            line-height: 2;
+          }
+          .signature-table {
+            width: 100%;
+            margin-top: 60px;
+            border-collapse: collapse;
+          }
+          .signature-table td {
+            border: 1px solid #000;
+            padding: 15px;
+            text-align: center;
+            font-size: 13px;
+            height: 50px;
+          }
+          .signature-table th {
+            border: 1px solid #000;
+            padding: 12px;
+            background-color: #f5f5f5;
+            font-weight: bold;
+            font-size: 13px;
+          }
+          @media print {
+            body { padding: 0; }
+            .container { padding: 20px; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header-row">
+            <div class="logo-section">
+              <div class="logo-text">المملكة العربية السعودية</div>
+              <div class="logo-text">وزارة التعليم</div>
+              <div class="logo-text">الإدارة العامة للتعليم</div>
+            </div>
+            
+            <div class="logo-section">
+              <!-- مساحة للشعار -->
+            </div>
+            
+            <div class="logo-section">
+              <div class="logo-text">المملكة العربية السعودية</div>
+              <div class="logo-text">وزارة التعليم</div>
+            </div>
+          </div>
+
+          <div class="title">تعهد سلوكي</div>
+
+          <div class="field-row">
+            <span class="field-label">أنا الطالب / الطالبة:</span>
+            <span class="field-value">${contractData.student_name}</span>
+          </div>
+
+          <div class="field-row">
+            <span class="field-label">في الصف:</span>
+            <span class="field-value">${contractData.grade}</span>
+          </div>
+
+          <div class="field-row">
+            <span class="field-label">بسبب المخالفة في التاريخ:</span>
+            <span class="field-value">${new Date(contractData.contract_date).toLocaleDateString('ar-SA')}</span>
+          </div>
+
+          <div class="commitment-text">
+            أتعهد بعدم تكرار أو ارتكاب مخالفة سلوكية مشابهة، وإلا فقد تطبق بحقي لائحة السلوك والمواظبة.
+          </div>
+
+          <div class="field-row">
+            <span class="field-label">المخالفة:</span>
+            <span class="field-value">${contractData.violation_description}</span>
+          </div>
+
+          <div style="margin: 30px 0;">
+            <div style="font-weight: bold; margin-bottom: 10px;">بنود التعهد:</div>
+            <div class="terms-box">${contractData.contract_terms.replace(/\n/g, '<br>')}</div>
+          </div>
+
+          <table class="signature-table">
+            <thead>
+              <tr>
+                <th>الطالب/الطالبة</th>
+                <th>ولي الأمر</th>
+                <th>المرشد الطلابي</th>
+                <th>مدير المدرسة</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>الاسم:<br><br>التوقيع:</td>
+                <td>الاسم:<br><br>التوقيع:</td>
+                <td>الاسم:<br><br>التوقيع:</td>
+                <td>الاسم:<br><br>التوقيع:</td>
+              </tr>
+              <tr>
+                <td>التاريخ:<br><br></td>
+                <td>التاريخ:<br><br></td>
+                <td>التاريخ:<br><br></td>
+                <td>التاريخ:<br><br></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
   };
 
   return (
