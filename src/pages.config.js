@@ -16,8 +16,8 @@ import SMSSystem from './pages/SMSSystem';
 import Settings from './pages/Settings';
 import StudentGroupDistribution from './pages/StudentGroupDistribution';
 import StudentTracking from './pages/StudentTracking';
-import Students from './pages/Students';
 import UsersManagement from './pages/UsersManagement';
+import Students from './pages/Students';
 import __Layout from './Layout.jsx';
 
 
@@ -40,8 +40,8 @@ export const PAGES = {
     "Settings": Settings,
     "StudentGroupDistribution": StudentGroupDistribution,
     "StudentTracking": StudentTracking,
-    "Students": Students,
     "UsersManagement": UsersManagement,
+    "Students": Students,
 }
 
 export const pagesConfig = {
