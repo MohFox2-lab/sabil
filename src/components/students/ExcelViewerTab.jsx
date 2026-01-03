@@ -142,7 +142,14 @@ export default function ExcelViewerTab() {
       const dataRows = aoa.slice(1).map((arr) => {
         const obj = {};
         fixedHeaders.forEach((h, idx) => {
-          obj[h] = toSafeString(arr?.[idx] ?? "");
+          const cellValue = arr?.[idx];
+          // ✅ معالجة خاصة للأرقام الطويلة (أرقام الهوية)
+          if (typeof cellValue === 'number' && cellValue > 999999999) {
+            // تحويل الأرقام الطويلة إلى نص بدون تدوين علمي
+            obj[h] = cellValue.toFixed(0);
+          } else {
+            obj[h] = toSafeString(cellValue ?? "");
+          }
         });
         return obj;
       });
