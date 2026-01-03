@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Save, X, Edit, Trash2 } from 'lucide-react';
+import { Plus, Save, X, Edit, Trash2, Loader2 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 
@@ -16,6 +16,7 @@ export default function BasicInfoTab() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStudents, setSelectedStudents] = useState([]);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteProgress, setDeleteProgress] = useState(0);
 
   const [formData, setFormData] = useState({
     student_id: '',
@@ -89,33 +90,36 @@ export default function BasicInfoTab() {
 
   const deleteMultipleStudents = useMutation({
     mutationFn: async (ids) => {
-      // حذف متوازي باستخدام دفعات لتجنب حمل الخادم
-      const batchSize = 10;
-      const batches = [];
+      const batchSize = 20; // زيادة حجم الدفعة
+      const total = ids.length;
+      let deleted = 0;
       
       for (let i = 0; i < ids.length; i += batchSize) {
         const batch = ids.slice(i, i + batchSize);
-        batches.push(batch);
-      }
-      
-      for (const batch of batches) {
         await Promise.all(batch.map(id => base44.entities.Student.delete(id)));
-        // تأخير بسيط بين الدفعات لتجنب تجاوز حد المعدل
-        if (batches.indexOf(batch) < batches.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 500));
+        deleted += batch.length;
+        setDeleteProgress(Math.round((deleted / total) * 100));
+        
+        // تأخير صغير بين الدفعات
+        if (i + batchSize < ids.length) {
+          await new Promise(resolve => setTimeout(resolve, 300));
         }
       }
     },
     onMutate: () => {
       setIsDeleting(true);
+      setDeleteProgress(0);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['students'] });
       setSelectedStudents([]);
       setIsDeleting(false);
+      setDeleteProgress(0);
+      alert('تم حذف الطلاب بنجاح ✅');
     },
     onError: (error) => {
       setIsDeleting(false);
+      setDeleteProgress(0);
       alert(`حدث خطأ أثناء الحذف: ${error.message}`);
     }
   });
@@ -186,15 +190,25 @@ export default function BasicInfoTab() {
             className="max-w-md"
           />
           {selectedStudents.length > 0 && (
-            <Button
-              onClick={handleDeleteSelected}
-              variant="destructive"
-              className="gap-2"
-              disabled={isDeleting}
-            >
-              <Trash2 className="w-4 h-4" />
-              {isDeleting ? `جاري الحذف... (${selectedStudents.length})` : `حذف المحدد (${selectedStudents.length})`}
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={handleDeleteSelected}
+                variant="destructive"
+                className="gap-2"
+                disabled={isDeleting}
+              >
+                {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                {isDeleting ? `جاري الحذف... ${deleteProgress}%` : `حذف المحدد (${selectedStudents.length})`}
+              </Button>
+              {isDeleting && (
+                <div className="w-32 bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-red-600 h-2 rounded-full transition-all duration-300" 
+                    style={{ width: `${deleteProgress}%` }}
+                  />
+                </div>
+              )}
+            </div>
           )}
         </div>
 
