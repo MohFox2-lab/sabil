@@ -171,55 +171,61 @@ export default function BasicInfoTab() {
 
       {/* Students Table */}
       <Card>
-        <CardContent className="p-6">
-          <div className="overflow-x-auto">
-            <table className="w-full">
+        <CardContent className="p-0">
+          <div className="overflow-x-auto" style={{ maxWidth: '100%' }}>
+            <table className="w-full min-w-max">
               <thead>
                 <tr className="border-b bg-blue-50">
-                  <th className="text-center p-3 w-12">
+                  <th className="text-center p-3 w-12 sticky right-0 bg-blue-50 z-10">
                     <Checkbox
                       checked={selectedStudents.length === filteredStudents.length && filteredStudents.length > 0}
                       onCheckedChange={handleSelectAll}
                     />
                   </th>
-                  <th className="text-right p-3 font-bold">رقم الطالب</th>
-                  <th className="text-right p-3 font-bold">معرف المدرسة</th>
-                  <th className="text-right p-3 font-bold">رقم الهوية</th>
-                  <th className="text-right p-3 font-bold">الاسم الكامل</th>
-                  <th className="text-right p-3 font-bold">الجنسية</th>
-                  <th className="text-right p-3 font-bold">المرحلة</th>
-                  <th className="text-right p-3 font-bold">الصف</th>
-                  <th className="text-right p-3 font-bold">الشعبة</th>
-                  <th className="text-center p-3 font-bold">إجراءات</th>
+                  <th className="text-right p-3 font-bold whitespace-nowrap min-w-[120px]">رقم الطالب</th>
+                  <th className="text-right p-3 font-bold whitespace-nowrap min-w-[120px]">معرف المدرسة</th>
+                  <th className="text-right p-3 font-bold whitespace-nowrap min-w-[150px]">رقم الهوية</th>
+                  <th className="text-right p-3 font-bold whitespace-nowrap min-w-[200px]">الاسم الكامل</th>
+                  <th className="text-right p-3 font-bold whitespace-nowrap min-w-[100px]">الجنسية</th>
+                  <th className="text-right p-3 font-bold whitespace-nowrap min-w-[100px]">تاريخ الميلاد</th>
+                  <th className="text-right p-3 font-bold whitespace-nowrap min-w-[80px]">المرحلة</th>
+                  <th className="text-right p-3 font-bold whitespace-nowrap min-w-[60px]">الصف</th>
+                  <th className="text-right p-3 font-bold whitespace-nowrap min-w-[80px]">الشعبة</th>
+                  <th className="text-right p-3 font-bold whitespace-nowrap min-w-[150px]">المدينة</th>
+                  <th className="text-right p-3 font-bold whitespace-nowrap min-w-[150px]">الحي</th>
+                  <th className="text-center p-3 font-bold whitespace-nowrap min-w-[120px] sticky left-0 bg-blue-50 z-10">إجراءات</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredStudents.map(student => (
                   <tr key={student.id} className="border-b hover:bg-blue-50 transition-colors">
-                    <td className="p-3 text-center">
+                    <td className="p-3 text-center sticky right-0 bg-white hover:bg-blue-50 z-10">
                       <Checkbox
                         checked={selectedStudents.includes(student.id)}
                         onCheckedChange={(checked) => handleSelectStudent(student.id, checked)}
                       />
                     </td>
-                    <td className="p-3 text-blue-700 font-mono">{student.student_id}</td>
-                    <td className="p-3 text-gray-600">{student.city || '-'}</td>
-                    <td className="p-3 text-gray-600 font-mono">{student.national_id || '-'}</td>
-                    <td className="p-3 font-semibold text-gray-900">{student.full_name}</td>
-                    <td className="p-3 text-gray-700">{student.nationality || '-'}</td>
-                    <td className="p-3">
+                    <td className="p-3 text-blue-700 font-mono whitespace-nowrap">{student.student_id}</td>
+                    <td className="p-3 text-gray-600 whitespace-nowrap">{student.city || '-'}</td>
+                    <td className="p-3 text-gray-600 font-mono whitespace-nowrap">{student.national_id || '-'}</td>
+                    <td className="p-3 font-semibold text-gray-900 whitespace-nowrap">{student.full_name}</td>
+                    <td className="p-3 text-gray-700 whitespace-nowrap">{student.nationality || '-'}</td>
+                    <td className="p-3 text-gray-600 whitespace-nowrap">{student.birth_date || '-'}</td>
+                    <td className="p-3 whitespace-nowrap">
                       <span className="inline-block px-2 py-1 rounded text-sm bg-emerald-100 text-emerald-700">
                         {student.grade_level}
                       </span>
                     </td>
-                    <td className="p-3">
+                    <td className="p-3 whitespace-nowrap">
                       <span className="inline-block px-2 py-1 rounded text-sm bg-blue-100 text-blue-700 font-semibold">
                         {student.grade_class}
                       </span>
                     </td>
-                    <td className="p-3 text-gray-700">{student.class_division || '-'}</td>
-                    <td className="p-3">
-                      <div className="flex gap-2 justify-center">
+                    <td className="p-3 text-gray-700 whitespace-nowrap">{student.class_division || '-'}</td>
+                    <td className="p-3 text-gray-600 whitespace-nowrap">{student.city || '-'}</td>
+                    <td className="p-3 text-gray-600 whitespace-nowrap">{student.district || '-'}</td>
+                    <td className="p-3 sticky left-0 bg-white hover:bg-blue-50 z-10">
+                      <div className="flex gap-2 justify-center whitespace-nowrap">
                         <Button onClick={() => handleEdit(student)} size="sm" variant="outline" className="hover:bg-blue-50">
                           <Edit className="w-4 h-4" />
                         </Button>

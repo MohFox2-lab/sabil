@@ -112,8 +112,9 @@ export default function ImportStudentData() {
           }
 
           // فهم الحقول الأساسية تلقائياً
-          const studentId = autoMapField(studentData, ['UserID', 'userid', 'user_id', 'student_id', 'رقم الطالب', 'الرقم', 'id']);
-          const nationalId = autoMapField(studentData, ['Identification', 'identification', 'national_id', 'رقم الهوية', 'الهوية']);
+          const studentId = autoMapField(studentData, ['UserID', 'userid', 'user_id', 'student_id', 'رقم الطالب', 'الرقم التسلسلي', 'الرقم', 'id']);
+          const nationalId = autoMapField(studentData, ['Identification', 'identification', 'national_id', 'رقم الهوية', 'الهوية', 'هوية']);
+          const schoolCode = autoMapField(studentData, ['School code', 'school code', 'schoolcode', 'معرف المدرسة', 'الرقم الوزاري', 'كود المدرسة']);
 
           // استخراج الاسم الكامل بذكاء
           let fullName = autoMapField(studentData, ['full_name', 'fullname', 'الاسم الكامل', 'اسم الطالب', 'name']);
@@ -161,6 +162,7 @@ export default function ImportStudentData() {
             student_id: studentId || `AUTO_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             full_name: fullName,
             national_id: nationalId || '',
+            city: schoolCode || '',
             behavior_score: 80,
             attendance_score: 100,
             distinguished_score: 0
@@ -194,9 +196,6 @@ export default function ImportStudentData() {
           }
 
           // إضافة الحقول الاختيارية
-          const schoolCode = autoMapField(studentData, ['School code', 'معرف المدرسة', 'الرقم الوزاري']);
-          if (schoolCode) studentRecord.city = schoolCode;
-
           const nationality = autoMapField(studentData, ['nationality', 'الجنسية']);
           if (nationality) studentRecord.nationality = nationality;
 

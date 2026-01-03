@@ -6,7 +6,6 @@ import CheckOut from './pages/CheckOut';
 import Dashboard from './pages/Dashboard';
 import ExamsManagement from './pages/ExamsManagement';
 import GroupsSystem from './pages/GroupsSystem';
-import ImportStudentData from './pages/ImportStudentData';
 import LeaveRequest from './pages/LeaveRequest';
 import MisconductList from './pages/MisconductList';
 import Pledges from './pages/Pledges';
@@ -18,6 +17,7 @@ import StudentGroupDistribution from './pages/StudentGroupDistribution';
 import StudentTracking from './pages/StudentTracking';
 import Students from './pages/Students';
 import UsersManagement from './pages/UsersManagement';
+import ImportStudentData from './pages/ImportStudentData';
 import __Layout from './Layout.jsx';
 
 
@@ -30,7 +30,6 @@ export const PAGES = {
     "Dashboard": Dashboard,
     "ExamsManagement": ExamsManagement,
     "GroupsSystem": GroupsSystem,
-    "ImportStudentData": ImportStudentData,
     "LeaveRequest": LeaveRequest,
     "MisconductList": MisconductList,
     "Pledges": Pledges,
@@ -42,6 +41,7 @@ export const PAGES = {
     "StudentTracking": StudentTracking,
     "Students": Students,
     "UsersManagement": UsersManagement,
+    "ImportStudentData": ImportStudentData,
 }
 
 export const pagesConfig = {
