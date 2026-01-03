@@ -78,6 +78,8 @@ export default function ImportWizardTab() {
   const [columnMapping, setColumnMapping] = useState({});
   const [importResults, setImportResults] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [saveToDatabase, setSaveToDatabase] = useState(false);
+  const [validationStats, setValidationStats] = useState(null);
 
   const queryClient = useQueryClient();
 
@@ -213,10 +215,68 @@ export default function ImportWizardTab() {
     return errors;
   }, [columnMapping]);
 
+  // فحص البيانات وإحصائيات
+  const validateData = useMemo(() => {
+    if (!excelRows.length || validationErrors.length > 0) return null;
+
+    const stats = {
+      total: excelRows.length,
+      valid: 0,
+      invalid: 0,
+      missingRequired: [],
+      duplicateStudentIds: [],
+      warnings: []
+    };
+
+    const studentIdsMap = new Map();
+
+    excelRows.forEach((row, idx) => {
+      let isValid = true;
+      const mapped = {};
+      
+      Object.entries(columnMapping).forEach(([excelCol, attr]) => {
+        if (attr !== 'ignore') {
+          mapped[attr] = row[excelCol];
+        }
+      });
+
+      // فحص الحقول المطلوبة
+      const requiredFields = STUDENT_ATTRIBUTES.filter(a => a.required).map(a => a.value);
+      requiredFields.forEach(field => {
+        if (!mapped[field] || String(mapped[field]).trim() === '') {
+          isValid = false;
+          stats.missingRequired.push({
+            row: idx + 2,
+            field: STUDENT_ATTRIBUTES.find(a => a.value === field)?.label,
+            sheet: row._sheet
+          });
+        }
+      });
+
+      // فحص رقم الطالب المكرر
+      if (mapped.student_id) {
+        const sid = String(mapped.student_id).trim();
+        if (studentIdsMap.has(sid)) {
+          stats.duplicateStudentIds.push({
+            studentId: sid,
+            rows: [studentIdsMap.get(sid), idx + 2]
+          });
+        } else {
+          studentIdsMap.set(sid, idx + 2);
+        }
+      }
+
+      if (isValid) stats.valid++;
+      else stats.invalid++;
+    });
+
+    return stats;
+  }, [excelRows, columnMapping, validationErrors]);
+
   // Step 4: Import
   const importMutation = useMutation({
     mutationFn: async () => {
-      const results = { success: 0, failed: 0, errors: [] };
+      const results = { success: 0, failed: 0, errors: [], previewOnly: !saveToDatabase };
       
       for (let i = 0; i < excelRows.length; i++) {
         try {
@@ -268,7 +328,11 @@ export default function ImportWizardTab() {
           if (!studentData.behavior_score) studentData.behavior_score = 80;
           if (!studentData.attendance_score) studentData.attendance_score = 100;
 
-          await base44.entities.Student.create(studentData);
+          // الحفظ في قاعدة البيانات فقط إذا اختار المعلم ذلك
+          if (saveToDatabase) {
+            await base44.entities.Student.create(studentData);
+          }
+          
           results.success++;
         } catch (err) {
           results.failed++;
@@ -284,7 +348,9 @@ export default function ImportWizardTab() {
     },
     onSuccess: (results) => {
       setImportResults(results);
-      queryClient.invalidateQueries({ queryKey: ['students'] });
+      if (saveToDatabase) {
+        queryClient.invalidateQueries({ queryKey: ['students'] });
+      }
       setStep(4);
     }
   });
@@ -294,7 +360,13 @@ export default function ImportWizardTab() {
       alert('يوجد حقول مطلوبة غير مربوطة');
       return;
     }
-    if (!confirm(`هل تريد استيراد ${excelRows.length} طالب؟`)) return;
+    
+    if (saveToDatabase) {
+      if (!confirm(`⚠️ سيتم حفظ ${excelRows.length} طالب في قاعدة البيانات. هل تريد المتابعة؟`)) return;
+    } else {
+      if (!confirm(`سيتم معاينة البيانات فقط بدون حفظ. هل تريد المتابعة؟`)) return;
+    }
+    
     importMutation.mutate();
   };
 
@@ -532,20 +604,95 @@ export default function ImportWizardTab() {
               </AlertDescription>
             </Alert>
 
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <div className="flex items-center justify-between">
+            {/* إحصائيات الفحص */}
+            {validateData && (
+              <div className="grid grid-cols-3 gap-4 mb-4">
+                <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4 text-center">
+                  <p className="text-3xl font-bold text-green-600">{validateData.valid}</p>
+                  <p className="text-sm text-gray-600">سجل صحيح ✅</p>
+                </div>
+                <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4 text-center">
+                  <p className="text-3xl font-bold text-red-600">{validateData.invalid}</p>
+                  <p className="text-sm text-gray-600">سجل غير صحيح ❌</p>
+                </div>
+                <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4 text-center">
+                  <p className="text-3xl font-bold text-blue-600">{validateData.total}</p>
+                  <p className="text-sm text-gray-600">إجمالي السجلات 📊</p>
+                </div>
+              </div>
+            )}
+
+            {/* تحذيرات الفحص */}
+            {validateData && validateData.missingRequired.length > 0 && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="w-4 h-4" />
+                <AlertDescription>
+                  <strong>حقول مطلوبة ناقصة ({validateData.missingRequired.length}):</strong>
+                  <div className="max-h-32 overflow-y-auto mt-2 text-xs space-y-1">
+                    {validateData.missingRequired.slice(0, 5).map((item, idx) => (
+                      <div key={idx}>الصف {item.row} ({item.sheet}): {item.field}</div>
+                    ))}
+                    {validateData.missingRequired.length > 5 && (
+                      <p className="text-xs mt-2">...و {validateData.missingRequired.length - 5} خطأ آخر</p>
+                    )}
+                  </div>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {validateData && validateData.duplicateStudentIds.length > 0 && (
+              <Alert className="mb-4 border-yellow-400 bg-yellow-50">
+                <AlertCircle className="w-4 h-4 text-yellow-600" />
+                <AlertDescription className="text-yellow-800">
+                  <strong>أرقام طلاب مكررة ({validateData.duplicateStudentIds.length}):</strong>
+                  <div className="max-h-32 overflow-y-auto mt-2 text-xs space-y-1">
+                    {validateData.duplicateStudentIds.slice(0, 3).map((item, idx) => (
+                      <div key={idx}>رقم الطالب: {item.studentId} (الصفوف: {item.rows.join(', ')})</div>
+                    ))}
+                  </div>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300 rounded-lg p-6">
+              <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className="font-bold text-lg">جاهز للاستيراد</p>
-                  <p className="text-sm text-gray-600">سيتم استيراد {excelRows.length} طالب من {fileInfo.sheetCount} شيت</p>
+                  <p className="font-bold text-xl text-green-800">جاهز للمعالجة</p>
+                  <p className="text-sm text-gray-600">
+                    {saveToDatabase 
+                      ? `سيتم حفظ ${excelRows.length} طالب في قاعدة البيانات`
+                      : `معاينة ${excelRows.length} طالب بدون حفظ`
+                    }
+                  </p>
                   {fileInfo.sheets.length > 1 && (
                     <p className="text-xs text-blue-600 mt-1">
-                      ✨ سيتم استيراد البيانات من جميع الشيتات معاً
+                      ✨ البيانات من {fileInfo.sheetCount} شيت
                     </p>
                   )}
                 </div>
                 <Badge className="bg-green-600 text-white text-lg px-4 py-2">
                   {excelRows.length} سجل
                 </Badge>
+              </div>
+
+              {/* خيار الحفظ */}
+              <div className="bg-white rounded-lg p-4 border-2 border-blue-200">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={saveToDatabase}
+                    onChange={(e) => setSaveToDatabase(e.target.checked)}
+                    className="w-5 h-5 text-blue-600 rounded"
+                  />
+                  <div>
+                    <p className="font-semibold text-gray-900">حفظ في قاعدة البيانات</p>
+                    <p className="text-xs text-gray-500">
+                      {saveToDatabase 
+                        ? '✅ سيتم حفظ البيانات نهائياً في النظام'
+                        : '⚠️ معاينة فقط - لن يتم حفظ أي شيء'}
+                    </p>
+                  </div>
+                </label>
               </div>
             </div>
 
@@ -581,11 +728,13 @@ export default function ImportWizardTab() {
               </Button>
               <Button 
                 onClick={handleImport}
-                disabled={importMutation.isPending}
-                className="flex-1 bg-green-600 hover:bg-green-700"
+                disabled={importMutation.isPending || (validateData && validateData.valid === 0)}
+                className={`flex-1 ${saveToDatabase ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'}`}
               >
                 <Database className="w-4 h-4 ml-2" />
-                {importMutation.isPending ? 'جاري الاستيراد...' : 'بدء الاستيراد'}
+                {importMutation.isPending 
+                  ? (saveToDatabase ? 'جاري الحفظ...' : 'جاري المعاينة...') 
+                  : (saveToDatabase ? 'حفظ في قاعدة البيانات' : 'معاينة البيانات فقط')}
               </Button>
             </div>
           </CardContent>
@@ -595,21 +744,33 @@ export default function ImportWizardTab() {
       {/* Step 4: Results */}
       {step === 4 && importResults && (
         <Card>
-          <CardHeader className="bg-green-50">
+          <CardHeader className={importResults.previewOnly ? "bg-blue-50" : "bg-green-50"}>
             <CardTitle className="flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-green-600" />
-              اكتمل الاستيراد
+              <CheckCircle2 className={`w-5 h-5 ${importResults.previewOnly ? 'text-blue-600' : 'text-green-600'}`} />
+              {importResults.previewOnly ? 'اكتملت المعاينة' : 'اكتمل الحفظ'}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6 space-y-6">
+            {importResults.previewOnly && (
+              <Alert className="border-blue-400 bg-blue-50">
+                <AlertCircle className="w-4 h-4 text-blue-600" />
+                <AlertDescription className="text-blue-800">
+                  <strong>معاينة فقط:</strong> لم يتم حفظ أي بيانات في قاعدة البيانات. 
+                  إذا كانت البيانات صحيحة، قم بتفعيل خيار "حفظ في قاعدة البيانات" وأعد المحاولة.
+                </AlertDescription>
+              </Alert>
+            )}
+
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-green-50 border-2 border-green-200 rounded-lg p-6 text-center">
                 <p className="text-4xl font-bold text-green-600">{importResults.success}</p>
-                <p className="text-sm text-gray-600 mt-2">تم الاستيراد بنجاح</p>
+                <p className="text-sm text-gray-600 mt-2">
+                  {importResults.previewOnly ? 'سجل صالح للحفظ' : 'تم الحفظ بنجاح'}
+                </p>
               </div>
               <div className="bg-red-50 border-2 border-red-200 rounded-lg p-6 text-center">
                 <p className="text-4xl font-bold text-red-600">{importResults.failed}</p>
-                <p className="text-sm text-gray-600 mt-2">فشل الاستيراد</p>
+                <p className="text-sm text-gray-600 mt-2">فشل المعالجة</p>
               </div>
             </div>
 
