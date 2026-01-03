@@ -12,7 +12,9 @@ import {
   FileCheck,
   FileSpreadsheet,
   Eye,
-  Edit
+  Edit,
+  Settings,
+  History
 } from 'lucide-react';
 import ContactInfoTab from '../components/students/ContactInfoTab';
 import StudentReportsTab from '../components/students/StudentReportsTab';
@@ -25,6 +27,8 @@ import RegisterIncidentTab from '../components/affairs/RegisterIncidentTab';
 import BehaviorContractTab from '../components/students/BehaviorContractTab';
 import ExcelViewerTab from '../components/students/ExcelViewerTab';
 import ViewEditStudentsTab from '../components/students/ViewEditStudentsTab';
+import ManageMisconductTypesTab from '../components/misconduct/ManageMisconductTypesTab';
+import StudentMisconductHistoryTab from '../components/misconduct/StudentMisconductHistoryTab';
 
 
 export default function Students() {
@@ -48,7 +52,15 @@ export default function Students() {
             </TabsTrigger>
             <TabsTrigger value="misconduct" className="gap-2 bg-white border-2 border-red-300 text-red-700 data-[state=active]:bg-red-500 data-[state=active]:text-white data-[state=active]:border-red-500 px-3 py-2 text-sm">
               <AlertTriangle className="w-4 h-4" />
-              <span className="truncate">المخالفات السلوكية</span>
+              <span className="truncate">تسجيل مخالفة</span>
+            </TabsTrigger>
+            <TabsTrigger value="misconduct-history" className="gap-2 bg-white border-2 border-purple-300 text-purple-700 data-[state=active]:bg-purple-500 data-[state=active]:text-white data-[state=active]:border-purple-500 px-3 py-2 text-sm">
+              <History className="w-4 h-4" />
+              <span className="truncate">سجل المخالفات</span>
+            </TabsTrigger>
+            <TabsTrigger value="manage-misconducts" className="gap-2 bg-white border-2 border-gray-300 text-gray-700 data-[state=active]:bg-gray-500 data-[state=active]:text-white data-[state=active]:border-gray-500 px-3 py-2 text-sm">
+              <Settings className="w-4 h-4" />
+              <span className="truncate">إدارة المخالفات</span>
             </TabsTrigger>
             <TabsTrigger value="contract" className="gap-2 bg-white border-2 border-blue-300 text-blue-700 data-[state=active]:bg-blue-500 data-[state=active]:text-white data-[state=active]:border-blue-500 px-3 py-2 text-sm">
               <FileCheck className="w-4 h-4" />
@@ -102,6 +114,14 @@ export default function Students() {
 
         <TabsContent value="misconduct" className="mt-6">
           <RegisterIncidentTab />
+        </TabsContent>
+
+        <TabsContent value="misconduct-history" className="mt-6">
+          <StudentMisconductHistoryTab />
+        </TabsContent>
+
+        <TabsContent value="manage-misconducts" className="mt-6">
+          <ManageMisconductTypesTab />
         </TabsContent>
 
         <TabsContent value="contract" className="mt-6">

@@ -32,8 +32,14 @@ export default function RegisterIncidentTab() {
 
   const { data: misconductTypes = [] } = useQuery({
     queryKey: ['misconduct-types'],
-    queryFn: () => base44.entities.MisconductType.list(),
+    queryFn: () => base44.entities.MisconductType.list('-degree'),
   });
+
+  const groupedMisconducts = misconductTypes.reduce((acc, item) => {
+    if (!acc[item.degree]) acc[item.degree] = [];
+    acc[item.degree].push(item);
+    return acc;
+  }, {});
 
   const selectedStudent = students.find(s => s.id === formData.student_id);
   const selectedMisconduct = misconductTypes.find(m => m.id === formData.misconduct_type_id);
@@ -306,7 +312,7 @@ export default function RegisterIncidentTab() {
               </Select>
             </div>
 
-            {/* Misconduct Type Selection */}
+            {/* Misconduct Type Selection - Grouped by Degree */}
             <div className="space-y-2">
               <Label className="text-base font-bold">نوع المخالفة *</Label>
               <Select
@@ -317,39 +323,70 @@ export default function RegisterIncidentTab() {
                 <SelectTrigger className="text-lg">
                   <SelectValue placeholder="اختر المخالفة" />
                 </SelectTrigger>
-                <SelectContent>
-                  {misconductTypes.map(type => (
-                    <SelectItem key={type.id} value={type.id}>
-                      {type.title} - الدرجة {type.degree} (حسم {type.points_deduction} درجة)
-                    </SelectItem>
-                  ))}
+                <SelectContent className="max-h-96">
+                  {[1, 2, 3, 4, 5].map(degree => {
+                    const items = groupedMisconducts[degree] || [];
+                    if (items.length === 0) return null;
+                    return (
+                      <React.Fragment key={degree}>
+                        <div className="px-2 py-1.5 text-sm font-bold bg-gray-100">
+                          الدرجة {['الأولى', 'الثانية', 'الثالثة', 'الرابعة', 'الخامسة'][degree - 1]}
+                        </div>
+                        {items.map(type => (
+                          <SelectItem key={type.id} value={type.id}>
+                            {type.title} ({type.points_deduction} درجة)
+                          </SelectItem>
+                        ))}
+                      </React.Fragment>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
 
             {/* Preview of selected misconduct */}
             {selectedMisconduct && (
-              <Card className="bg-amber-50 border-2 border-amber-200">
+              <Card className={`border-2 ${
+                selectedMisconduct.is_critical ? 'bg-red-50 border-red-400' : 'bg-amber-50 border-amber-200'
+              }`}>
                 <CardContent className="p-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <Badge className={
-                        selectedMisconduct.degree <= 2 ? 'bg-blue-600' :
-                        selectedMisconduct.degree === 3 ? 'bg-yellow-600' :
-                        selectedMisconduct.degree === 4 ? 'bg-orange-600' :
-                        'bg-red-600'
+                        selectedMisconduct.degree === 1 ? 'bg-blue-600' :
+                        selectedMisconduct.degree === 2 ? 'bg-yellow-600' :
+                        selectedMisconduct.degree === 3 ? 'bg-orange-600' :
+                        selectedMisconduct.degree === 4 ? 'bg-red-600' :
+                        'bg-purple-600'
                       }>
                         الدرجة {['الأولى', 'الثانية', 'الثالثة', 'الرابعة', 'الخامسة'][selectedMisconduct.degree - 1]}
                       </Badge>
-                      <span className="font-bold text-red-600">- {selectedMisconduct.points_deduction} درجة</span>
+                      <span className="font-bold text-red-600 text-lg">- {selectedMisconduct.points_deduction} درجة</span>
+                      {selectedMisconduct.is_critical && (
+                        <Badge className="bg-red-600 animate-pulse">⚠️ مخالفة حرجة</Badge>
+                      )}
                     </div>
+
                     {selectedMisconduct.description && (
                       <p className="text-sm text-gray-700">{selectedMisconduct.description}</p>
                     )}
-                    {selectedMisconduct.actions_default && (
-                      <div className="text-sm">
-                        <p className="font-semibold text-gray-700">الإجراءات الافتراضية:</p>
-                        <p className="text-gray-600">{selectedMisconduct.actions_default}</p>
+
+                    <div className="bg-white rounded p-3 space-y-2">
+                      <p className="font-bold text-sm text-gray-800">الإجراءات المقترحة حسب التكرار:</p>
+                      <div className="space-y-1 text-xs">
+                        <p className="text-gray-700">• <strong>الإجراء 1:</strong> {selectedMisconduct.procedure_1}</p>
+                        <p className="text-gray-700">• <strong>الإجراء 2:</strong> {selectedMisconduct.procedure_2}</p>
+                        <p className="text-gray-700">• <strong>الإجراء 3:</strong> {selectedMisconduct.procedure_3}</p>
+                        <p className="text-gray-700">• <strong>الإجراء 4:</strong> {selectedMisconduct.procedure_4}</p>
+                      </div>
+                    </div>
+
+                    {selectedMisconduct.is_critical && (
+                      <div className="bg-red-100 border border-red-300 rounded p-3">
+                        <p className="text-sm font-bold text-red-800">⚠️ تنبيه:</p>
+                        <p className="text-xs text-red-700">
+                          هذه مخالفة حرجة تتطلب تدخلاً فورياً وإبلاغ الإدارة وولي الأمر
+                        </p>
                       </div>
                     )}
                   </div>
