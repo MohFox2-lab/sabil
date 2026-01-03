@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Upload, Trash2, Download, FileSpreadsheet, Search, RotateCcw, Save } from "lucide-react";
 
 /**
@@ -69,20 +70,25 @@ function jsonToCsv(headers, rows) {
 export default function ExcelViewerTab() {
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(false);
-  const [fileInfo, setFileInfo] = useState(null); // {name, sheet}
-  const [headers, setHeaders] = useState([]);
-  const [rows, setRows] = useState([]); // array of objects {header: value}
+  const [fileInfo, setFileInfo] = useState(null); // {name}
+  const [allSheets, setAllSheets] = useState([]); // [{name, headers, rows}]
+  const [activeSheet, setActiveSheet] = useState("");
   const [search, setSearch] = useState("");
 
 
 
+  const currentSheet = useMemo(() => {
+    return allSheets.find(s => s.name === activeSheet) || null;
+  }, [allSheets, activeSheet]);
+
   const filtered = useMemo(() => {
+    if (!currentSheet) return [];
     const t = search.trim();
-    if (!t) return rows;
-    return rows.filter((r) =>
-      headers.some((h) => toSafeString(r[h]).includes(t))
+    if (!t) return currentSheet.rows;
+    return currentSheet.rows.filter((r) =>
+      currentSheet.headers.some((h) => toSafeString(r[h]).includes(t))
     );
-  }, [rows, headers, search]);
+  }, [currentSheet, search]);
 
   const onPickFile = async (e) => {
     const file = e.target.files?.[0];
@@ -90,8 +96,8 @@ export default function ExcelViewerTab() {
 
     setLoading(true);
     setStatus("جاري قراءة الملف...");
-    setHeaders([]);
-    setRows([]);
+    setAllSheets([]);
+    setActiveSheet("");
     setFileInfo(null);
 
     try {
@@ -106,44 +112,53 @@ export default function ExcelViewerTab() {
       const XLSX = await ensureXLSX();
       const wb = XLSX.read(buf, { type: "array" });
 
-      const sheetName = wb.SheetNames?.[0];
-      if (!sheetName) throw new Error("الملف لا يحتوي أي شيت");
+      if (!wb.SheetNames?.length) throw new Error("الملف لا يحتوي أي شيت");
 
-      const ws = wb.Sheets[sheetName];
+      // قراءة جميع الشيتات
+      const sheets = wb.SheetNames.map(sheetName => {
+        const ws = wb.Sheets[sheetName];
 
-      // نقرأ الصفوف كـ Array-Of-Arrays عشان نحافظ على ترتيب الأعمدة 100%
-      const aoa = XLSX.utils.sheet_to_json(ws, {
-        header: 1,
-        defval: "",
-        blankrows: false,
-        raw: true, // ✅ مهم جداً للحفاظ على أرقام الهوية الطويلة
-      });
-
-      if (!aoa.length) throw new Error("الشيت فارغ");
-
-      const rawHeaders = aoa[0];
-      const fixedHeaders = normalizeHeaders(rawHeaders);
-
-      const dataRows = aoa.slice(1).map((arr) => {
-        const obj = {};
-        fixedHeaders.forEach((h, idx) => {
-          const cellValue = arr?.[idx];
-          // ✅ معالجة خاصة للأرقام الطويلة (أرقام الهوية)
-          if (typeof cellValue === 'number' && cellValue > 999999999) {
-            // تحويل الأرقام الطويلة إلى نص بدون تدوين علمي
-            obj[h] = cellValue.toFixed(0);
-          } else {
-            obj[h] = toSafeString(cellValue ?? "");
-          }
+        // نقرأ الصفوف كـ Array-Of-Arrays عشان نحافظ على ترتيب الأعمدة 100%
+        const aoa = XLSX.utils.sheet_to_json(ws, {
+          header: 1,
+          defval: "",
+          blankrows: false,
+          raw: true, // ✅ مهم جداً للحفاظ على أرقام الهوية الطويلة
         });
-        return obj;
+
+        if (!aoa.length) return { name: sheetName, headers: [], rows: [] };
+
+        const rawHeaders = aoa[0];
+        const fixedHeaders = normalizeHeaders(rawHeaders);
+
+        const dataRows = aoa.slice(1).map((arr) => {
+          const obj = {};
+          fixedHeaders.forEach((h, idx) => {
+            const cellValue = arr?.[idx];
+            // ✅ معالجة خاصة للأرقام الطويلة (أرقام الهوية)
+            if (typeof cellValue === 'number' && cellValue > 999999999) {
+              // تحويل الأرقام الطويلة إلى نص بدون تدوين علمي
+              obj[h] = cellValue.toFixed(0);
+            } else {
+              obj[h] = toSafeString(cellValue ?? "");
+            }
+          });
+          return obj;
+        });
+
+        return {
+          name: sheetName,
+          headers: fixedHeaders,
+          rows: dataRows
+        };
       });
 
-      setHeaders(fixedHeaders);
-      setRows(dataRows);
-      setFileInfo({ name: file.name, sheet: sheetName });
+      setAllSheets(sheets);
+      setActiveSheet(sheets[0]?.name || "");
+      setFileInfo({ name: file.name });
 
-      setStatus(`تمت المعاينة ✅ (${dataRows.length} صف) — عرض فقط بدون حفظ في قاعدة البيانات.`);
+      const totalRows = sheets.reduce((sum, s) => sum + s.rows.length, 0);
+      setStatus(`تمت المعاينة ✅ (${sheets.length} شيت، ${totalRows} صف) — عرض فقط بدون حفظ في قاعدة البيانات.`);
 
     } catch (err) {
       console.error(err);
@@ -156,21 +171,21 @@ export default function ExcelViewerTab() {
 
   const clearLocalPreview = () => {
     if (!confirm("مسح المعاينة الحالية؟ (لن يحذف أي بيانات من النظام)")) return;
-    setHeaders([]);
-    setRows([]);
+    setAllSheets([]);
+    setActiveSheet("");
     setFileInfo(null);
     setSearch("");
     setStatus("تم المسح ✅");
   };
 
   const downloadCsv = () => {
-    if (!headers.length) return;
-    const csv = "\uFEFF" + jsonToCsv(headers, rows); // BOM لدعم العربية
+    if (!currentSheet) return;
+    const csv = "\uFEFF" + jsonToCsv(currentSheet.headers, currentSheet.rows); // BOM لدعم العربية
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = (fileInfo?.name ? fileInfo.name.replace(/\.(xlsx|xls)$/i, "") : "excel") + ".csv";
+    a.download = (fileInfo?.name ? fileInfo.name.replace(/\.(xlsx|xls)$/i, "") : "excel") + `_${currentSheet.name}.csv`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -178,13 +193,13 @@ export default function ExcelViewerTab() {
   };
 
   const downloadJson = () => {
-    if (!headers.length) return;
-    const payload = { fileInfo, headers, rows };
+    if (!currentSheet) return;
+    const payload = { fileInfo, sheet: currentSheet };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = (fileInfo?.name ? fileInfo.name.replace(/\.(xlsx|xls)$/i, "") : "excel") + ".json";
+    a.download = (fileInfo?.name ? fileInfo.name.replace(/\.(xlsx|xls)$/i, "") : "excel") + `_${currentSheet.name}.json`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -192,9 +207,9 @@ export default function ExcelViewerTab() {
   };
 
   const saveExcelFile = async () => {
-    if (!headers.length) return;
+    if (!currentSheet) return;
     
-    if (!confirm(`هل تريد حفظ ${rows.length} سجل في قاعدة البيانات؟`)) return;
+    if (!confirm(`هل تريد حفظ ${currentSheet.rows.length} سجل من شيت "${currentSheet.name}" في قاعدة البيانات؟`)) return;
     
     try {
       setLoading(true);
@@ -205,7 +220,7 @@ export default function ExcelViewerTab() {
       let success = 0;
       let failed = 0;
       
-      for (const row of rows) {
+      for (const row of currentSheet.rows) {
         try {
           const studentData = {
             student_id: row['رقم الطالب'] || row['student_id'] || '',
@@ -281,20 +296,20 @@ export default function ExcelViewerTab() {
               تنزيل JSON
             </Button>
 
-            <Button variant="default" className="gap-2 bg-green-600 hover:bg-green-700" onClick={saveExcelFile} disabled={!headers.length || loading}>
+            <Button variant="default" className="gap-2 bg-green-600 hover:bg-green-700" onClick={saveExcelFile} disabled={!currentSheet || loading}>
               <Save className="w-4 h-4" />
-              حفظ في قاعدة البيانات
+              حفظ الشيت الحالي
             </Button>
 
-            <Button variant="destructive" className="gap-2" onClick={clearLocalPreview} disabled={!headers.length && !fileInfo}>
+            <Button variant="destructive" className="gap-2" onClick={clearLocalPreview} disabled={!allSheets.length && !fileInfo}>
               <Trash2 className="w-4 h-4" />
               مسح المعاينة
             </Button>
           </div>
 
-          {fileInfo && (
+          {fileInfo && currentSheet && (
             <div className="text-sm text-gray-600">
-              الملف: <b>{fileInfo.name}</b> — الشيت: <b>{fileInfo.sheet}</b> — الأعمدة: <b>{headers.length}</b> — الصفوف: <b>{rows.length}</b>
+              الملف: <b>{fileInfo.name}</b> — الشيتات: <b>{allSheets.length}</b> — الأعمدة: <b>{currentSheet.headers.length}</b> — الصفوف: <b>{currentSheet.rows.length}</b>
             </div>
           )}
 
@@ -310,7 +325,7 @@ export default function ExcelViewerTab() {
               placeholder="بحث داخل الجدول..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              disabled={!headers.length}
+              disabled={!currentSheet}
             />
             <Button
               variant="outline"
@@ -326,48 +341,68 @@ export default function ExcelViewerTab() {
         </CardContent>
       </Card>
 
-      {/* Table */}
-      <Card>
-        <CardContent className="p-0">
-          {!headers.length ? (
-            <div className="p-8 text-center text-gray-500">
-              ارفع ملف Excel وسيتم عرضه هنا **كما هو** (بنفس الأعمدة والأسماء).
-            </div>
-          ) : (
-            <div className="overflow-x-auto" style={{ maxWidth: "100%" }}>
-              <table className="w-full min-w-max">
-                <thead>
-                  <tr className="border-b bg-slate-50">
-                    {headers.map((h) => (
-                      <th key={h} className="text-right p-3 font-bold whitespace-nowrap">
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((r, idx) => (
-                    <tr key={idx} className="border-b hover:bg-slate-50">
-                      {headers.map((h) => (
-                        <td key={h} className="p-3 text-gray-700 whitespace-nowrap">
-                          {toSafeString(r[h]) || "-"}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                  {!filtered.length && (
-                    <tr>
-                      <td className="p-6 text-center text-gray-500" colSpan={headers.length}>
-                        لا توجد نتائج مطابقة للبحث.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Sheets Tabs & Table */}
+      {!allSheets.length ? (
+        <Card>
+          <CardContent className="p-8 text-center text-gray-500">
+            ارفع ملف Excel وسيتم عرضه هنا **كما هو** (بنفس الأعمدة والأسماء).
+          </CardContent>
+        </Card>
+      ) : (
+        <Tabs value={activeSheet} onValueChange={setActiveSheet}>
+          <TabsList className="w-full justify-start flex-wrap h-auto">
+            {allSheets.map((sheet) => (
+              <TabsTrigger key={sheet.name} value={sheet.name} className="gap-2">
+                <FileSpreadsheet className="w-4 h-4" />
+                {sheet.name}
+                <Badge variant="secondary" className="text-xs">
+                  {sheet.rows.length}
+                </Badge>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+
+          {allSheets.map((sheet) => (
+            <TabsContent key={sheet.name} value={sheet.name}>
+              <Card>
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto" style={{ maxWidth: "100%" }}>
+                    <table className="w-full min-w-max">
+                      <thead>
+                        <tr className="border-b bg-slate-50">
+                          {sheet.headers.map((h) => (
+                            <th key={h} className="text-right p-3 font-bold whitespace-nowrap">
+                              {h}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filtered.map((r, idx) => (
+                          <tr key={idx} className="border-b hover:bg-slate-50">
+                            {sheet.headers.map((h) => (
+                              <td key={h} className="p-3 text-gray-700 whitespace-nowrap">
+                                {toSafeString(r[h]) || "-"}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                        {!filtered.length && (
+                          <tr>
+                            <td className="p-6 text-center text-gray-500" colSpan={sheet.headers.length}>
+                              {search ? 'لا توجد نتائج مطابقة للبحث.' : 'لا توجد بيانات في هذا الشيت.'}
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          ))}
+        </Tabs>
+      )}
     </div>
   );
 }
