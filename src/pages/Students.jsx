@@ -83,6 +83,10 @@ export default function Students() {
               <FileSpreadsheet className="w-4 h-4" />
               <span className="truncate">استيراد Excel (عرض فقط)</span>
             </TabsTrigger>
+            <TabsTrigger value="import-wizard" className="gap-2 bg-white border-2 border-violet-300 text-violet-700 data-[state=active]:bg-violet-500 data-[state=active]:text-white data-[state=active]:border-violet-500 px-3 py-2 text-sm">
+              <FileSpreadsheet className="w-4 h-4" />
+              <span className="truncate">🧙 معالج الاستيراد</span>
+            </TabsTrigger>
             <TabsTrigger value="exit" className="gap-2 bg-white border-2 border-red-300 text-red-700 data-[state=active]:bg-red-500 data-[state=active]:text-white data-[state=active]:border-red-500 px-3 py-2 text-sm">
               <LogOut className="w-4 h-4" />
               <span className="truncate">خروج</span>
@@ -132,6 +136,10 @@ export default function Students() {
 
         <TabsContent value="excel-viewer" className="mt-6">
           <ExcelViewerTab />
+        </TabsContent>
+
+        <TabsContent value="import-wizard" className="mt-6">
+          <ImportWizardTab />
         </TabsContent>
 
         <TabsContent value="exit" className="mt-6">
