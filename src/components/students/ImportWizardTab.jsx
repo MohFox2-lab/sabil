@@ -72,6 +72,7 @@ export default function ImportWizardTab() {
   const [columnMapping, setColumnMapping] = useState({});
   const [importResults, setImportResults] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
 
   const queryClient = useQueryClient();
 
@@ -179,8 +180,11 @@ export default function ImportWizardTab() {
   const importMutation = useMutation({
     mutationFn: async () => {
       const results = { success: 0, failed: 0, errors: [] };
+      const total = excelRows.length;
       
       for (let i = 0; i < excelRows.length; i++) {
+        setImportProgress({ current: i + 1, total });
+        
         try {
           const row = excelRows[i];
           const studentData = {};
@@ -209,6 +213,11 @@ export default function ImportWizardTab() {
 
           await base44.entities.Student.create(studentData);
           results.success++;
+          
+          // تأخير بسيط لتجنب rate limit
+          if (i < excelRows.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
         } catch (err) {
           results.failed++;
           results.errors.push({
@@ -223,8 +232,12 @@ export default function ImportWizardTab() {
     },
     onSuccess: (results) => {
       setImportResults(results);
+      setImportProgress({ current: 0, total: 0 });
       queryClient.invalidateQueries({ queryKey: ['students'] });
       setStep(4);
+    },
+    onError: () => {
+      setImportProgress({ current: 0, total: 0 });
     }
   });
 
@@ -483,8 +496,23 @@ export default function ImportWizardTab() {
               </table>
             </div>
 
+            {importMutation.isPending && (
+              <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-semibold text-blue-800">جاري الاستيراد...</span>
+                  <span className="text-blue-600 font-bold">
+                    {importProgress.current} / {importProgress.total}
+                  </span>
+                </div>
+                <Progress value={(importProgress.current / importProgress.total) * 100} className="h-3" />
+                <p className="text-xs text-gray-600 mt-2 text-center">
+                  {Math.round((importProgress.current / importProgress.total) * 100)}% مكتمل
+                </p>
+              </div>
+            )}
+
             <div className="flex gap-3 pt-4">
-              <Button variant="outline" onClick={() => setStep(2)}>
+              <Button variant="outline" onClick={() => setStep(2)} disabled={importMutation.isPending}>
                 <ArrowLeft className="w-4 h-4 ml-2" />
                 تعديل الربط
               </Button>
@@ -494,7 +522,7 @@ export default function ImportWizardTab() {
                 className="flex-1 bg-green-600 hover:bg-green-700"
               >
                 <Database className="w-4 h-4 ml-2" />
-                {importMutation.isPending ? 'جاري الاستيراد...' : 'بدء الاستيراد'}
+                {importMutation.isPending ? `جاري الاستيراد... (${importProgress.current}/${importProgress.total})` : 'بدء الاستيراد'}
               </Button>
             </div>
           </CardContent>
