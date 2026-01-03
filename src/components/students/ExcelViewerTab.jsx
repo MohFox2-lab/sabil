@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Upload, Trash2, Download, FileSpreadsheet, Search, RotateCcw } from "lucide-react";
+import { Upload, Trash2, Download, FileSpreadsheet, Search, RotateCcw, Save } from "lucide-react";
 
 /**
  * ✅ Excel Viewer ONLY
@@ -191,6 +191,57 @@ export default function ExcelViewerTab() {
     URL.revokeObjectURL(url);
   };
 
+  const saveExcelFile = async () => {
+    if (!headers.length) return;
+    
+    if (!confirm(`هل تريد حفظ ${rows.length} سجل في قاعدة البيانات؟`)) return;
+    
+    try {
+      setLoading(true);
+      setStatus("جاري حفظ البيانات...");
+      
+      const { base44 } = await import('@/api/base44Client');
+      
+      let success = 0;
+      let failed = 0;
+      
+      for (const row of rows) {
+        try {
+          const studentData = {
+            student_id: row['رقم الطالب'] || row['student_id'] || '',
+            full_name: row['الاسم الكامل'] || row['full_name'] || row['الاسم'] || '',
+            national_id: row['رقم الهوية'] || row['national_id'] || '',
+            grade_level: row['المرحلة'] || row['grade_level'] || 'متوسط',
+            grade_class: parseInt(row['الصف'] || row['grade_class'] || '1'),
+            class_division: row['الشعبة'] || row['class_division'] || '',
+            school_code: row['معرف المدرسة'] || row['school_code'] || '',
+            school_name: row['اسم المدرسة'] || row['school_name'] || '',
+            school_code_ministry: row['الرقم الوزاري'] || row['school_code_ministry'] || '',
+            nationality: row['الجنسية'] || row['nationality'] || 'سعودي',
+            behavior_score: 80,
+            attendance_score: 100
+          };
+          
+          if (studentData.full_name) {
+            await base44.entities.Student.create(studentData);
+            success++;
+          }
+        } catch (err) {
+          failed++;
+          console.error('خطأ في حفظ السجل:', err);
+        }
+      }
+      
+      setStatus(`✅ تم الحفظ: ${success} نجح | ${failed} فشل`);
+      
+    } catch (err) {
+      console.error(err);
+      setStatus(`❌ فشل الحفظ: ${err?.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <Card>
@@ -230,14 +281,15 @@ export default function ExcelViewerTab() {
               تنزيل JSON
             </Button>
 
+            <Button variant="default" className="gap-2 bg-green-600 hover:bg-green-700" onClick={saveExcelFile} disabled={!headers.length || loading}>
+              <Save className="w-4 h-4" />
+              حفظ في قاعدة البيانات
+            </Button>
+
             <Button variant="destructive" className="gap-2" onClick={clearLocalPreview} disabled={!headers.length && !fileInfo}>
               <Trash2 className="w-4 h-4" />
               مسح المعاينة
             </Button>
-
-            <Badge variant="secondary" className="px-3 py-1">
-              لا يتم حفظ أي شيء في قاعدة البيانات ✅
-            </Badge>
           </div>
 
           {fileInfo && (
