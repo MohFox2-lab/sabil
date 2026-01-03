@@ -175,38 +175,52 @@ export default function BasicInfoTab() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b">
+                <tr className="border-b bg-blue-50">
                   <th className="text-center p-3 w-12">
                     <Checkbox
                       checked={selectedStudents.length === filteredStudents.length && filteredStudents.length > 0}
                       onCheckedChange={handleSelectAll}
                     />
                   </th>
-                  <th className="text-right p-3">رقم الطالب</th>
-                  <th className="text-right p-3">الاسم الكامل</th>
-                  <th className="text-right p-3">الجنسية</th>
-                  <th className="text-right p-3">المرحلة</th>
-                  <th className="text-right p-3">الصف</th>
-                  <th className="text-center p-3">إجراءات</th>
+                  <th className="text-right p-3 font-bold">رقم الطالب</th>
+                  <th className="text-right p-3 font-bold">معرف المدرسة</th>
+                  <th className="text-right p-3 font-bold">رقم الهوية</th>
+                  <th className="text-right p-3 font-bold">الاسم الكامل</th>
+                  <th className="text-right p-3 font-bold">الجنسية</th>
+                  <th className="text-right p-3 font-bold">المرحلة</th>
+                  <th className="text-right p-3 font-bold">الصف</th>
+                  <th className="text-right p-3 font-bold">الشعبة</th>
+                  <th className="text-center p-3 font-bold">إجراءات</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredStudents.map(student => (
-                  <tr key={student.id} className="border-b hover:bg-gray-50">
+                  <tr key={student.id} className="border-b hover:bg-blue-50 transition-colors">
                     <td className="p-3 text-center">
                       <Checkbox
                         checked={selectedStudents.includes(student.id)}
                         onCheckedChange={(checked) => handleSelectStudent(student.id, checked)}
                       />
                     </td>
-                    <td className="p-3">{student.student_id}</td>
-                    <td className="p-3 font-semibold">{student.full_name}</td>
-                    <td className="p-3">{student.nationality}</td>
-                    <td className="p-3">{student.grade_level}</td>
-                    <td className="p-3">{student.grade_class}</td>
+                    <td className="p-3 text-blue-700 font-mono">{student.student_id}</td>
+                    <td className="p-3 text-gray-600">{student.city || '-'}</td>
+                    <td className="p-3 text-gray-600 font-mono">{student.national_id || '-'}</td>
+                    <td className="p-3 font-semibold text-gray-900">{student.full_name}</td>
+                    <td className="p-3 text-gray-700">{student.nationality || '-'}</td>
+                    <td className="p-3">
+                      <span className="inline-block px-2 py-1 rounded text-sm bg-emerald-100 text-emerald-700">
+                        {student.grade_level}
+                      </span>
+                    </td>
+                    <td className="p-3">
+                      <span className="inline-block px-2 py-1 rounded text-sm bg-blue-100 text-blue-700 font-semibold">
+                        {student.grade_class}
+                      </span>
+                    </td>
+                    <td className="p-3 text-gray-700">{student.class_division || '-'}</td>
                     <td className="p-3">
                       <div className="flex gap-2 justify-center">
-                        <Button onClick={() => handleEdit(student)} size="sm" variant="outline">
+                        <Button onClick={() => handleEdit(student)} size="sm" variant="outline" className="hover:bg-blue-50">
                           <Edit className="w-4 h-4" />
                         </Button>
                         <Button 
