@@ -308,6 +308,13 @@ export default function Layout({ children, currentPageName }) {
                   توثيق API
                 </Button>
               </Link>
+
+              <Link to={createPageUrl('ImportWizard')}>
+                <Button variant={currentPageName === 'ImportWizard' ? 'secondary' : 'ghost'} className="text-white hover:bg-emerald-600 gap-2">
+                  <Upload className="w-5 h-5" />
+                  🧙 معالج الاستيراد
+                </Button>
+              </Link>
               </nav>
 
             {/* Mobile Menu Button */}
