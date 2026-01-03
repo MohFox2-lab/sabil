@@ -34,75 +34,17 @@ export default function ImportStudentData() {
         throw new Error('لم يتم العثور على بيانات طلاب في الملف');
       }
 
-      // 3. فهم البيانات تلقائياً بذكاء (Smart Auto-Mapping)
-      const autoMapField = (data, possibleKeys) => {
-        // البحث بالمفاتيح المحددة أولاً (exact match)
-        for (const key of possibleKeys) {
-          if (key in data) {
-            const value = data[key];
-            if (value !== null && value !== undefined && value !== '') {
-              const strValue = value.toString().trim();
-              if (strValue) {
-                return strValue;
-              }
-            }
-          }
-        }
-        
-        // البحث بالتشابه في أسماء الأعمدة (case insensitive)
-        const dataKeys = Object.keys(data);
-        for (const possibleKey of possibleKeys) {
-          const lowerPossible = possibleKey.toLowerCase();
-          for (const dataKey of dataKeys) {
-            const lowerDataKey = dataKey.toLowerCase();
-            if (lowerDataKey.includes(lowerPossible) || lowerPossible.includes(lowerDataKey)) {
-              const value = data[dataKey];
-              if (value !== null && value !== undefined && value !== '') {
-                const strValue = value.toString().trim();
-                if (strValue) {
-                  return strValue;
-                }
-              }
-            }
-          }
-        }
-        
-        return null;
+      // استيراد حسب ترتيب الأعمدة فقط (Index-Based Mapping)
+      const getValueByIndex = (row, headers, columnName) => {
+        const index = headers.findIndex(h => h === columnName);
+        if (index === -1) return null;
+        const value = Object.values(row)[index];
+        if (value === null || value === undefined || value === '') return null;
+        return value.toString().trim();
       };
 
-      // دالة ذكية لاستخراج الأسماء من أي أعمدة
-      const extractNames = (studentData) => {
-        const keys = Object.keys(studentData);
-        const names = [];
-        
-        // البحث عن أعمدة الأسماء (عادة تكون متتالية)
-        for (const key of keys) {
-          const value = studentData[key];
-          const lowerKey = key.toLowerCase();
-          
-          // تحقق إذا كان العمود يحتوي على اسم
-          if (value && value.toString().trim() && 
-              (lowerKey.includes('name') || 
-               lowerKey.includes('اسم') || 
-               lowerKey.includes('first') || 
-               lowerKey.includes('second') || 
-               lowerKey.includes('third') || 
-               lowerKey.includes('family') ||
-               lowerKey.includes('الأول') ||
-               lowerKey.includes('الأب') ||
-               lowerKey.includes('الجد') ||
-               lowerKey.includes('العائلة'))) {
-            names.push(value.toString().trim());
-          }
-        }
-        
-        // إذا وجدنا أسماء، ادمجها
-        if (names.length > 0) {
-          return names.join(' ').replace(/\s+/g, ' ').trim();
-        }
-        
-        return null;
-      };
+      // الحصول على أسماء الأعمدة من أول صف
+      const headers = students.length > 0 ? Object.keys(students[0]) : [];
 
       const results = {
         success: 0,
@@ -116,124 +58,58 @@ export default function ImportStudentData() {
           const allValues = Object.values(studentData);
           const hasAnyData = allValues.some(v => v && v.toString().trim());
           if (!hasAnyData) {
-            continue; // تخطي الصف الفارغ
+            continue;
           }
 
-          // فهم الحقول الأساسية تلقائياً
-          const studentId = autoMapField(studentData, ['UserID', 'userid', 'user_id', 'student_id', 'رقم الطالب', 'الرقم', 'id']);
-          const nationalId = autoMapField(studentData, ['Identification', 'identification', 'national_id', 'رقم الهوية', 'الهوية']);
+          // قراءة البيانات حسب ترتيب الأعمدة فقط
+          const studentId = getValueByIndex(studentData, headers, 'UserID');
+          const schoolCode = getValueByIndex(studentData, headers, 'School code');
+          const nationalId = getValueByIndex(studentData, headers, 'Identification');
+          const firstName = getValueByIndex(studentData, headers, 'First name') || '';
+          const secondName = getValueByIndex(studentData, headers, 'Second name') || '';
+          const thirdName = getValueByIndex(studentData, headers, 'Third name') || '';
+          const familyName = getValueByIndex(studentData, headers, 'Family name') || '';
 
-          // استخراج الاسم الكامل بذكاء
-          let fullName = autoMapField(studentData, ['full_name', 'fullname', 'الاسم الكامل', 'اسم الطالب', 'name']);
-          
-          if (!fullName) {
-            // محاولة دمج الأسماء المجزأة
-            const firstName = autoMapField(studentData, ['First name', 'firstname', 'first', 'الاسم الأول', 'الاسم']) || '';
-            const secondName = autoMapField(studentData, ['Second name', 'secondname', 'second', 'اسم الأب', 'الأب']) || '';
-            const thirdName = autoMapField(studentData, ['Third name', 'thirdname', 'third', 'اسم الجد', 'الجد']) || '';
-            const familyName = autoMapField(studentData, ['Family name', 'familyname', 'family', 'last name', 'lastname', 'اسم العائلة', 'العائلة']) || '';
-            
-            if (firstName || secondName || thirdName || familyName) {
-              fullName = `${firstName} ${secondName} ${thirdName} ${familyName}`.replace(/\s+/g, ' ').trim();
-            }
-          }
-          
-          // إذا لم نجد الاسم بالطرق السابقة، استخدم الاستخراج الذكي
-          if (!fullName || fullName.length < 2) {
-            fullName = extractNames(studentData);
+          // التحقق من وجود اسم واحد على الأقل
+          if (!firstName && !secondName && !thirdName && !familyName) {
+            throw new Error('يجب أن يحتوي السجل على اسم واحد على الأقل');
           }
 
-          // التحقق من وجود بيانات أساسية فقط
-          if (!fullName || fullName.length < 2) {
-            // محاولة أخيرة: أخذ أي قيم نصية من أول 10 أعمدة
-            const allValues = Object.values(studentData).slice(0, 10);
-            const textValues = allValues.filter(v => 
-              v && 
-              typeof v === 'string' && 
-              v.trim().length > 1 && 
-              isNaN(v) && // ليس رقم
-              v.trim().length < 50 // ليس نص طويل جداً
-            );
-            
-            if (textValues.length >= 2) {
-              fullName = textValues.slice(0, 4).join(' ').trim();
-            }
-          }
-          
-          if (!fullName || fullName.length < 2) {
-            throw new Error('الاسم مطلوب');
-          }
+          // تجميع الاسم الكامل كما هو بدون أي تعديل
+          const fullName = [firstName, secondName, thirdName, familyName]
+            .filter(n => n)
+            .join(' ')
+            .trim();
 
           // إنشاء سجل الطالب
           const studentRecord = {
             student_id: studentId || `AUTO_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            full_name: fullName,
+            school_code: schoolCode || '',
             national_id: nationalId || '',
+            first_name: firstName,
+            second_name: secondName,
+            third_name: thirdName,
+            family_name: familyName,
+            full_name: fullName,
             behavior_score: 80,
             attendance_score: 100,
-            distinguished_score: 0
+            distinguished_score: 0,
+            grade_level: 'متوسط',
+            grade_class: 1,
+            class_division: 'أ'
           };
-
-          // إضافة المرحلة والصف والشعبة إذا توفرت
-          const gradeLevel = autoMapField(studentData, ['grade_level', 'المرحلة', 'المستوى']);
-          if (gradeLevel) {
-            studentRecord.grade_level = gradeLevel;
-          } else {
-            studentRecord.grade_level = 'متوسط';
-          }
-
-          const gradeClass = autoMapField(studentData, ['grade_class', 'الصف', 'class']);
-          if (gradeClass) {
-            const parsed = parseInt(gradeClass);
-            if (!isNaN(parsed) && parsed >= 1 && parsed <= 12) {
-              studentRecord.grade_class = parsed;
-            } else {
-              studentRecord.grade_class = 1;
-            }
-          } else {
-            studentRecord.grade_class = 1;
-          }
-
-          const classDivision = autoMapField(studentData, ['class_division', 'الشعبة', 'الفصل']);
-          if (classDivision) {
-            studentRecord.class_division = classDivision;
-          } else {
-            studentRecord.class_division = 'أ';
-          }
-
-          // إضافة الحقول الاختيارية
-          const schoolCode = autoMapField(studentData, ['School code', 'معرف المدرسة', 'الرقم الوزاري']);
-          if (schoolCode) studentRecord.city = schoolCode;
-
-          const nationality = autoMapField(studentData, ['nationality', 'الجنسية']);
-          if (nationality) studentRecord.nationality = nationality;
-
-          const birthDate = autoMapField(studentData, ['birth_date', 'تاريخ الميلاد']);
-          if (birthDate) studentRecord.birth_date = birthDate;
-
-          const guardianName = autoMapField(studentData, ['guardian_name', 'اسم ولي الأمر']);
-          if (guardianName) studentRecord.guardian_name = guardianName;
-
-          const guardianPhone = autoMapField(studentData, ['guardian_phone', 'جوال ولي الأمر', 'هاتف ولي الأمر']);
-          if (guardianPhone) studentRecord.guardian_phone = guardianPhone;
-
-          const studentPhone = autoMapField(studentData, ['student_phone', 'جوال الطالب', 'هاتف الطالب']);
-          if (studentPhone) studentRecord.student_phone = studentPhone;
 
           await base44.entities.Student.create(studentRecord);
           results.success++;
         } catch (error) {
           results.failed++;
           
-          // محاولة الحصول على أي معرف للطالب لعرضه في الخطأ
           let studentIdentifier = 'غير معروف';
-          const allKeys = Object.keys(studentData);
           const allValues = Object.values(studentData);
           
-          // ابحث عن أي قيمة نصية في أول 7 أعمدة
           for (let i = 0; i < Math.min(7, allValues.length); i++) {
             const value = allValues[i];
-            if (value && typeof value === 'string' && value.trim()) {
+            if (value && value.toString().trim()) {
               studentIdentifier = value.toString().substring(0, 50);
               break;
             }
@@ -241,8 +117,7 @@ export default function ImportStudentData() {
           
           results.errors.push({
             student: studentIdentifier,
-            error: error.message,
-            columns: allKeys.join(', ').substring(0, 100)
+            error: error.message
           });
         }
       }

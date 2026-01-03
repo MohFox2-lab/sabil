@@ -199,11 +199,10 @@ export default function BasicInfoTab() {
               </thead>
               <tbody>
                 {filteredStudents.map((student, idx) => {
-                  const nameParts = student.full_name?.split(' ') || [];
-                  const firstName = nameParts[0] || '-';
-                  const secondName = nameParts[1] || '-';
-                  const thirdName = nameParts[2] || '-';
-                  const familyName = nameParts.slice(3).join(' ') || '-';
+                  const firstName = student.first_name || '-';
+                  const secondName = student.second_name || '-';
+                  const thirdName = student.third_name || '-';
+                  const familyName = student.family_name || '-';
                   
                   return (
                     <tr key={student.id} className={`border-b hover:bg-blue-50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
@@ -214,7 +213,7 @@ export default function BasicInfoTab() {
                         />
                       </td>
                       <td className="p-2 text-center text-blue-700 font-mono text-sm border-l border-gray-200">{student.student_id}</td>
-                      <td className="p-2 text-center text-gray-600 text-sm border-l border-gray-200">{student.city || '-'}</td>
+                      <td className="p-2 text-center text-gray-600 text-sm border-l border-gray-200">{student.school_code || '-'}</td>
                       <td className="p-2 text-center text-gray-600 font-mono text-sm border-l border-gray-200">{student.national_id || '-'}</td>
                       <td className="p-2 text-center font-semibold text-gray-900 text-sm border-l border-gray-200">{firstName}</td>
                       <td className="p-2 text-center text-gray-800 text-sm border-l border-gray-200">{secondName}</td>
