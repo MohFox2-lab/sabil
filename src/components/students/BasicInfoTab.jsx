@@ -76,12 +76,17 @@ export default function BasicInfoTab() {
 
   const deleteMultipleStudents = useMutation({
     mutationFn: async (ids) => {
-      await Promise.all(ids.map(id => base44.entities.Student.delete(id)));
+      for (const id of ids) {
+        await base44.entities.Student.delete(id);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['students'] });
       setSelectedStudents([]);
     },
+    onError: (error) => {
+      alert(`حدث خطأ أثناء الحذف: ${error.message}`);
+    }
   });
 
   const handleEdit = (student) => {
