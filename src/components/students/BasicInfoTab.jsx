@@ -171,73 +171,89 @@ export default function BasicInfoTab() {
 
       {/* Students Table */}
       <Card>
-        <CardContent className="p-6">
+        <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full border-collapse">
               <thead>
-                <tr className="border-b bg-blue-50">
-                  <th className="text-center p-3 w-12">
+                <tr className="bg-gradient-to-l from-blue-600 to-blue-700 text-white">
+                  <th className="text-center p-3 w-12 border-l border-blue-500">
                     <Checkbox
                       checked={selectedStudents.length === filteredStudents.length && filteredStudents.length > 0}
                       onCheckedChange={handleSelectAll}
+                      className="border-white"
                     />
                   </th>
-                  <th className="text-right p-3 font-bold">رقم الطالب</th>
-                  <th className="text-right p-3 font-bold">معرف المدرسة</th>
-                  <th className="text-right p-3 font-bold">رقم الهوية</th>
-                  <th className="text-right p-3 font-bold">الاسم الكامل</th>
-                  <th className="text-right p-3 font-bold">الجنسية</th>
-                  <th className="text-right p-3 font-bold">المرحلة</th>
-                  <th className="text-right p-3 font-bold">الصف</th>
-                  <th className="text-right p-3 font-bold">الشعبة</th>
-                  <th className="text-center p-3 font-bold">إجراءات</th>
+                  <th className="text-center p-3 font-bold text-sm border-l border-blue-500 min-w-[100px]">رقم الطالب</th>
+                  <th className="text-center p-3 font-bold text-sm border-l border-blue-500 min-w-[100px]">معرف المدرسة</th>
+                  <th className="text-center p-3 font-bold text-sm border-l border-blue-500 min-w-[120px]">رقم الهوية</th>
+                  <th className="text-center p-3 font-bold text-sm border-l border-blue-500 min-w-[200px]">الاسم الأول</th>
+                  <th className="text-center p-3 font-bold text-sm border-l border-blue-500 min-w-[100px]">اسم الأب</th>
+                  <th className="text-center p-3 font-bold text-sm border-l border-blue-500 min-w-[100px]">اسم الجد</th>
+                  <th className="text-center p-3 font-bold text-sm border-l border-blue-500 min-w-[100px]">اسم العائلة</th>
+                  <th className="text-center p-3 font-bold text-sm border-l border-blue-500 min-w-[80px]">الجنسية</th>
+                  <th className="text-center p-3 font-bold text-sm border-l border-blue-500 min-w-[80px]">المرحلة</th>
+                  <th className="text-center p-3 font-bold text-sm border-l border-blue-500 min-w-[60px]">الصف</th>
+                  <th className="text-center p-3 font-bold text-sm border-l border-blue-500 min-w-[60px]">الشعبة</th>
+                  <th className="text-center p-3 font-bold text-sm min-w-[120px]">إجراءات</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredStudents.map(student => (
-                  <tr key={student.id} className="border-b hover:bg-blue-50 transition-colors">
-                    <td className="p-3 text-center">
-                      <Checkbox
-                        checked={selectedStudents.includes(student.id)}
-                        onCheckedChange={(checked) => handleSelectStudent(student.id, checked)}
-                      />
-                    </td>
-                    <td className="p-3 text-blue-700 font-mono">{student.student_id}</td>
-                    <td className="p-3 text-gray-600">{student.city || '-'}</td>
-                    <td className="p-3 text-gray-600 font-mono">{student.national_id || '-'}</td>
-                    <td className="p-3 font-semibold text-gray-900">{student.full_name}</td>
-                    <td className="p-3 text-gray-700">{student.nationality || '-'}</td>
-                    <td className="p-3">
-                      <span className="inline-block px-2 py-1 rounded text-sm bg-emerald-100 text-emerald-700">
-                        {student.grade_level}
-                      </span>
-                    </td>
-                    <td className="p-3">
-                      <span className="inline-block px-2 py-1 rounded text-sm bg-blue-100 text-blue-700 font-semibold">
-                        {student.grade_class}
-                      </span>
-                    </td>
-                    <td className="p-3 text-gray-700">{student.class_division || '-'}</td>
-                    <td className="p-3">
-                      <div className="flex gap-2 justify-center">
-                        <Button onClick={() => handleEdit(student)} size="sm" variant="outline" className="hover:bg-blue-50">
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button 
-                          onClick={() => {
-                            if (confirm('هل أنت متأكد من حذف هذا الطالب؟')) {
-                              deleteStudent.mutate(student.id);
-                            }
-                          }}
-                          size="sm" 
-                          variant="destructive"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {filteredStudents.map((student, idx) => {
+                  const nameParts = student.full_name?.split(' ') || [];
+                  const firstName = nameParts[0] || '-';
+                  const secondName = nameParts[1] || '-';
+                  const thirdName = nameParts[2] || '-';
+                  const familyName = nameParts.slice(3).join(' ') || '-';
+                  
+                  return (
+                    <tr key={student.id} className={`border-b hover:bg-blue-50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                      <td className="p-2 text-center border-l border-gray-200">
+                        <Checkbox
+                          checked={selectedStudents.includes(student.id)}
+                          onCheckedChange={(checked) => handleSelectStudent(student.id, checked)}
+                        />
+                      </td>
+                      <td className="p-2 text-center text-blue-700 font-mono text-sm border-l border-gray-200">{student.student_id}</td>
+                      <td className="p-2 text-center text-gray-600 text-sm border-l border-gray-200">{student.city || '-'}</td>
+                      <td className="p-2 text-center text-gray-600 font-mono text-sm border-l border-gray-200">{student.national_id || '-'}</td>
+                      <td className="p-2 text-center font-semibold text-gray-900 text-sm border-l border-gray-200">{firstName}</td>
+                      <td className="p-2 text-center text-gray-800 text-sm border-l border-gray-200">{secondName}</td>
+                      <td className="p-2 text-center text-gray-800 text-sm border-l border-gray-200">{thirdName}</td>
+                      <td className="p-2 text-center text-gray-800 text-sm border-l border-gray-200">{familyName}</td>
+                      <td className="p-2 text-center text-gray-700 text-sm border-l border-gray-200">{student.nationality || '-'}</td>
+                      <td className="p-2 text-center border-l border-gray-200">
+                        <span className="inline-block px-2 py-1 rounded text-xs bg-emerald-100 text-emerald-700">
+                          {student.grade_level}
+                        </span>
+                      </td>
+                      <td className="p-2 text-center border-l border-gray-200">
+                        <span className="inline-block px-2 py-1 rounded text-xs bg-blue-100 text-blue-700 font-semibold">
+                          {student.grade_class}
+                        </span>
+                      </td>
+                      <td className="p-2 text-center text-gray-700 text-sm border-l border-gray-200">{student.class_division || '-'}</td>
+                      <td className="p-2">
+                        <div className="flex gap-1 justify-center">
+                          <Button onClick={() => handleEdit(student)} size="sm" variant="outline" className="hover:bg-blue-50 h-8 px-2">
+                            <Edit className="w-3 h-3" />
+                          </Button>
+                          <Button 
+                            onClick={() => {
+                              if (confirm('هل أنت متأكد من حذف هذا الطالب؟')) {
+                                deleteStudent.mutate(student.id);
+                              }
+                            }}
+                            size="sm" 
+                            variant="destructive"
+                            className="h-8 px-2"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

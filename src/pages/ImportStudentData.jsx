@@ -36,11 +36,16 @@ export default function ImportStudentData() {
 
       // 3. فهم البيانات تلقائياً بذكاء (Smart Auto-Mapping)
       const autoMapField = (data, possibleKeys) => {
-        // البحث بالمفاتيح المحددة أولاً
+        // البحث بالمفاتيح المحددة أولاً (exact match)
         for (const key of possibleKeys) {
-          const value = data[key];
-          if (value !== null && value !== undefined && value.toString().trim()) {
-            return value.toString().trim();
+          if (key in data) {
+            const value = data[key];
+            if (value !== null && value !== undefined && value !== '') {
+              const strValue = value.toString().trim();
+              if (strValue) {
+                return strValue;
+              }
+            }
           }
         }
         
@@ -52,8 +57,11 @@ export default function ImportStudentData() {
             const lowerDataKey = dataKey.toLowerCase();
             if (lowerDataKey.includes(lowerPossible) || lowerPossible.includes(lowerDataKey)) {
               const value = data[dataKey];
-              if (value !== null && value !== undefined && value.toString().trim()) {
-                return value.toString().trim();
+              if (value !== null && value !== undefined && value !== '') {
+                const strValue = value.toString().trim();
+                if (strValue) {
+                  return strValue;
+                }
               }
             }
           }
