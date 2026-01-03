@@ -4,6 +4,24 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Upload, FileText, FileSpreadsheet, FileType, File, AlertCircle, CheckCircle2, Download } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { useQueryClient } from '@tanstack/react-query';
+
+async function ensureXLSX() {
+  if (window.XLSX) return window.XLSX;
+  await new Promise((resolve, reject) => {
+    const existing = document.querySelector('script[data-xlsx="1"]');
+    if (existing) return resolve();
+    const s = document.createElement("script");
+    s.src = "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";
+    s.async = true;
+    s.dataset.xlsx = "1";
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error("فشل تحميل مكتبة قراءة الإكسل"));
+    document.head.appendChild(s);
+  });
+  if (!window.XLSX) throw new Error("لم يتم تحميل XLSX بشكل صحيح");
+  return window.XLSX;
+}
 
 export default function ImportFiles() {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -11,6 +29,7 @@ export default function ImportFiles() {
   const [extractedData, setExtractedData] = useState(null);
   const [status, setStatus] = useState('');
   const [loading, setLoading] = useState(false);
+  const queryClient = useQueryClient();
 
   const getFileIcon = (type) => {
     if (type?.includes('sheet') || type?.includes('excel')) return FileSpreadsheet;
@@ -42,6 +61,125 @@ export default function ImportFiles() {
     setStatus('');
   };
 
+  const readExcelFile = async (file) => {
+    const XLSX = await ensureXLSX();
+    const buf = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(reader.error || new Error("تعذر قراءة الملف"));
+      reader.onload = () => resolve(reader.result);
+      reader.readAsArrayBuffer(file);
+    });
+
+    const wb = XLSX.read(buf, { type: "array", raw: true });
+    if (!wb.SheetNames?.length) throw new Error("الملف لا يحتوي أي شيت");
+
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "", raw: true });
+    if (!aoa.length) return [];
+
+    const headers = aoa[0].map(h => String(h || '').trim().toLowerCase());
+    const dataRows = aoa.slice(1);
+
+    const students = [];
+    for (const row of dataRows) {
+      const obj = {};
+      headers.forEach((h, idx) => {
+        const val = row[idx];
+        if (typeof val === 'number' && val > 999999999) {
+          obj[h] = val.toFixed(0);
+        } else {
+          obj[h] = String(val ?? "").trim();
+        }
+      });
+
+      const allValues = Object.values(obj).filter(v => v && v !== '');
+      if (allValues.length === 0) continue;
+
+      let firstName = '', fatherName = '', grandfatherName = '', familyName = '';
+      let fullName = '', studentId = '', nationalId = '';
+      let gradeLevel = '', gradeClass = '', classDivision = '';
+      let guardianName = '', guardianPhone = '', studentPhone = '';
+
+      for (const [key, value] of Object.entries(obj)) {
+        if (!value) continue;
+        
+        if (!firstName && (key.includes('أول') || key.includes('اول') || key.includes('first'))) {
+          if (isNaN(value) || value.length > 2) firstName = value;
+        }
+        if (!fatherName && (key.includes('أب') || key.includes('اب') || key.includes('second') || key.includes('father'))) {
+          if (isNaN(value) || value.length > 2) fatherName = value;
+        }
+        if (!grandfatherName && (key.includes('جد') || key.includes('third') || key.includes('grandfather'))) {
+          if (isNaN(value) || value.length > 2) grandfatherName = value;
+        }
+        if (!familyName && (key.includes('عائل') || key.includes('عايل') || key.includes('family') || key.includes('last'))) {
+          if (isNaN(value) || value.length > 2) familyName = value;
+        }
+        if (!fullName && (key.includes('كامل') || key === 'اسم' || key.includes('full_name'))) {
+          if (isNaN(value) || value.length > 5) fullName = value;
+        }
+        if (!studentId && key.includes('رقم') && key.includes('طالب')) studentId = value;
+        if (!nationalId && (key.includes('هوية') || key.includes('هويه') || key.includes('identification'))) nationalId = value;
+        if (!gradeLevel && key.includes('مرحل')) gradeLevel = value;
+        if (!gradeClass && key === 'صف') gradeClass = value;
+        if (!classDivision && key.includes('شعب')) classDivision = value;
+        if (!guardianName && key.includes('ولي')) guardianName = value;
+        if (!guardianPhone && key.includes('جوال') && key.includes('ولي')) guardianPhone = value;
+        if (!studentPhone && key.includes('جوال') && key.includes('طالب')) studentPhone = value;
+      }
+
+      if (!fullName) {
+        fullName = [firstName, fatherName, grandfatherName, familyName].filter(Boolean).join(' ');
+      }
+
+      if (fullName || firstName) {
+        students.push({
+          student_id: studentId,
+          national_id: nationalId,
+          full_name: fullName,
+          first_name: firstName,
+          father_name: fatherName,
+          grandfather_name: grandfatherName,
+          family_name: familyName,
+          grade_level: gradeLevel || 'متوسط',
+          grade_class: parseInt(gradeClass) || 1,
+          class_division: classDivision,
+          guardian_name: guardianName,
+          guardian_phone: guardianPhone,
+          student_phone: studentPhone
+        });
+      }
+    }
+    return students;
+  };
+
+  const readTextFile = async (file) => {
+    const text = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(reader.error || new Error("تعذر قراءة الملف"));
+      reader.onload = () => resolve(reader.result);
+      reader.readAsText(file, 'utf-8');
+    });
+
+    const lines = text.split('\n').filter(l => l.trim());
+    const students = [];
+    
+    for (const line of lines) {
+      const parts = line.split(/[,\t|]/).map(p => p.trim()).filter(Boolean);
+      if (parts.length >= 2) {
+        students.push({
+          full_name: parts[0] || '',
+          student_id: parts[1] || '',
+          national_id: parts[2] || '',
+          grade_level: parts[3] || 'متوسط',
+          grade_class: parseInt(parts[4]) || 1,
+          guardian_phone: parts[5] || ''
+        });
+      }
+    }
+    return students;
+  };
+
   const handleUploadAndExtract = async () => {
     if (!selectedFile) {
       setStatus('❌ الرجاء اختيار ملف أولاً');
@@ -49,51 +187,31 @@ export default function ImportFiles() {
     }
 
     setLoading(true);
-    setStatus('⏳ جاري رفع الملف واستخراج البيانات...');
+    setStatus('⏳ جاري قراءة الملف محلياً...');
 
     try {
-      // Step 1: Upload file
-      const { file_url } = await base44.integrations.Core.UploadFile({ file: selectedFile });
-      
-      // Step 2: Define expected schema for student data
-      const schema = {
-        type: "object",
-        properties: {
-          students: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: {
-                student_id: { type: "string" },
-                national_id: { type: "string" },
-                full_name: { type: "string" },
-                first_name: { type: "string" },
-                father_name: { type: "string" },
-                grandfather_name: { type: "string" },
-                family_name: { type: "string" },
-                grade_level: { type: "string" },
-                grade_class: { type: "number" },
-                class_division: { type: "string" },
-                guardian_name: { type: "string" },
-                guardian_phone: { type: "string" },
-                student_phone: { type: "string" }
-              }
-            }
-          }
-        }
-      };
+      let students = [];
+      const fileName = selectedFile.name.toLowerCase();
 
-      // Step 3: Extract data using AI
-      const result = await base44.integrations.Core.ExtractDataFromUploadedFile({
-        file_url: file_url,
-        json_schema: schema
-      });
-
-      if (result.status === 'success' && result.output?.students) {
-        setExtractedData(result.output.students);
-        setStatus(`✅ تم استخراج ${result.output.students.length} سجل بنجاح`);
+      if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls') || fileName.endsWith('.csv')) {
+        students = await readExcelFile(selectedFile);
+      } else if (fileName.endsWith('.txt') || fileName.endsWith('.csv')) {
+        students = await readTextFile(selectedFile);
+      } else if (fileName.endsWith('.pdf') || fileName.endsWith('.docx') || fileName.endsWith('.doc')) {
+        setStatus('❌ عذراً، ملفات PDF و Word تحتاج مكتبات إضافية. استخدم Excel أو Text');
+        setLoading(false);
+        return;
       } else {
-        setStatus(`❌ فشل الاستخراج: ${result.details || 'خطأ غير معروف'}`);
+        setStatus('❌ صيغة الملف غير مدعومة');
+        setLoading(false);
+        return;
+      }
+
+      if (students.length > 0) {
+        setExtractedData(students);
+        setStatus(`✅ تم قراءة ${students.length} سجل بنجاح من الملف`);
+      } else {
+        setStatus('⚠️ لم يتم العثور على بيانات في الملف');
       }
     } catch (err) {
       console.error(err);
@@ -152,6 +270,7 @@ export default function ImportFiles() {
       }
 
       setStatus(`✅ تم الحفظ: ${success} نجح | ${failed} فشل`);
+      queryClient.invalidateQueries({ queryKey: ['students'] });
     } catch (err) {
       console.error(err);
       setStatus(`❌ فشل الحفظ: ${err?.message}`);
@@ -192,7 +311,7 @@ export default function ImportFiles() {
                 <Badge className="bg-gray-600">Text (.txt, .csv)</Badge>
               </div>
               <p className="text-sm text-blue-800 mt-2">
-                💡 سيتم استخدام الذكاء الاصطناعي لاستخراج بيانات الطلاب تلقائياً من الملف
+                💡 يعمل بدون إنترنت - قراءة محلية للملفات (Excel و Text فقط حالياً)
               </p>
             </div>
           </div>
@@ -251,7 +370,7 @@ export default function ImportFiles() {
               disabled={!selectedFile || loading}
               className="flex-1 bg-blue-600 hover:bg-blue-700 text-lg py-6"
             >
-              {loading ? '⏳ جاري المعالجة...' : '🤖 استخراج البيانات بالذكاء الاصطناعي'}
+              {loading ? '⏳ جاري القراءة...' : '📂 قراءة الملف محلياً'}
             </Button>
           </div>
 
