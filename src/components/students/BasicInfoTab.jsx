@@ -15,6 +15,7 @@ export default function BasicInfoTab() {
   const [editingStudent, setEditingStudent] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStudents, setSelectedStudents] = useState([]);
+
   const [formData, setFormData] = useState({
     student_id: '',
     national_id: '',
@@ -22,6 +23,12 @@ export default function BasicInfoTab() {
     nationality: 'سعودي',
     birth_date: '',
     place_of_birth: '',
+
+    // ✅ حقول المدرسة (المطلوبة عندك)
+    school_code: '',
+    school_name: '',
+    school_code_ministry: '',
+
     grade_level: 'متوسط',
     grade_class: 1,
     class_division: '',
@@ -56,6 +63,11 @@ export default function BasicInfoTab() {
         nationality: 'سعودي',
         birth_date: '',
         place_of_birth: '',
+
+        school_code: '',
+        school_name: '',
+        school_code_ministry: '',
+
         grade_level: 'متوسط',
         grade_class: 1,
         class_division: '',
@@ -92,14 +104,20 @@ export default function BasicInfoTab() {
   const handleEdit = (student) => {
     setEditingStudent(student);
     setFormData({
-      student_id: student.student_id,
+      student_id: student.student_id || '',
       national_id: student.national_id || '',
-      full_name: student.full_name,
+      full_name: student.full_name || '',
       nationality: student.nationality || 'سعودي',
       birth_date: student.birth_date || '',
       place_of_birth: student.place_of_birth || '',
-      grade_level: student.grade_level,
-      grade_class: student.grade_class,
+
+      // ✅ تحميل حقول المدرسة
+      school_code: student.school_code || '',
+      school_name: student.school_name || '',
+      school_code_ministry: student.school_code_ministry || '',
+
+      grade_level: student.grade_level || 'متوسط',
+      grade_class: student.grade_class ?? 1,
       class_division: student.class_division || '',
       residential_address: student.residential_address || '',
       city: student.city || '',
@@ -114,24 +132,18 @@ export default function BasicInfoTab() {
     createOrUpdate.mutate(formData);
   };
 
-  const filteredStudents = students.filter(s => 
-    s.full_name?.includes(searchTerm) || s.student_id?.includes(searchTerm)
+  const filteredStudents = students.filter(s =>
+    (s.full_name || '').includes(searchTerm) || (s.student_id || '').includes(searchTerm) || (s.national_id || '').includes(searchTerm)
   );
 
   const handleSelectAll = (checked) => {
-    if (checked) {
-      setSelectedStudents(filteredStudents.map(s => s.id));
-    } else {
-      setSelectedStudents([]);
-    }
+    if (checked) setSelectedStudents(filteredStudents.map(s => s.id));
+    else setSelectedStudents([]);
   };
 
   const handleSelectStudent = (studentId, checked) => {
-    if (checked) {
-      setSelectedStudents([...selectedStudents, studentId]);
-    } else {
-      setSelectedStudents(selectedStudents.filter(id => id !== studentId));
-    }
+    if (checked) setSelectedStudents([...selectedStudents, studentId]);
+    else setSelectedStudents(selectedStudents.filter(id => id !== studentId));
   };
 
   const handleDeleteSelected = () => {
@@ -155,8 +167,8 @@ export default function BasicInfoTab() {
             className="max-w-md"
           />
           {selectedStudents.length > 0 && (
-            <Button 
-              onClick={handleDeleteSelected} 
+            <Button
+              onClick={handleDeleteSelected}
               variant="destructive"
               className="gap-2"
             >
@@ -165,6 +177,7 @@ export default function BasicInfoTab() {
             </Button>
           )}
         </div>
+
         <Button onClick={() => {
           setEditingStudent(null);
           setShowForm(true);
@@ -187,20 +200,30 @@ export default function BasicInfoTab() {
                       onCheckedChange={handleSelectAll}
                     />
                   </th>
+
                   <th className="text-right p-3 font-bold whitespace-nowrap min-w-[120px]">رقم الطالب</th>
-                  <th className="text-right p-3 font-bold whitespace-nowrap min-w-[120px]">معرف المدرسة</th>
                   <th className="text-right p-3 font-bold whitespace-nowrap min-w-[150px]">رقم الهوية</th>
-                  <th className="text-right p-3 font-bold whitespace-nowrap min-w-[200px]">الاسم الكامل</th>
+
+                  {/* ✅ أعمدة المدرسة */}
+                  <th className="text-right p-3 font-bold whitespace-nowrap min-w-[140px]">معرف المدرسة</th>
+                  <th className="text-right p-3 font-bold whitespace-nowrap min-w-[220px]">اسم المدرسة</th>
+                  <th className="text-right p-3 font-bold whitespace-nowrap min-w-[160px]">الرقم الوزاري</th>
+
+                  <th className="text-right p-3 font-bold whitespace-nowrap min-w-[220px]">الاسم الكامل</th>
                   <th className="text-right p-3 font-bold whitespace-nowrap min-w-[100px]">الجنسية</th>
                   <th className="text-right p-3 font-bold whitespace-nowrap min-w-[100px]">تاريخ الميلاد</th>
                   <th className="text-right p-3 font-bold whitespace-nowrap min-w-[80px]">المرحلة</th>
                   <th className="text-right p-3 font-bold whitespace-nowrap min-w-[60px]">الصف</th>
                   <th className="text-right p-3 font-bold whitespace-nowrap min-w-[80px]">الشعبة</th>
-                  <th className="text-right p-3 font-bold whitespace-nowrap min-w-[150px]">المدينة</th>
-                  <th className="text-right p-3 font-bold whitespace-nowrap min-w-[150px]">الحي</th>
-                  <th className="text-center p-3 font-bold whitespace-nowrap min-w-[120px] sticky left-0 bg-blue-50 z-10">إجراءات</th>
+                  <th className="text-right p-3 font-bold whitespace-nowrap min-w-[140px]">المدينة</th>
+                  <th className="text-right p-3 font-bold whitespace-nowrap min-w-[140px]">الحي</th>
+
+                  <th className="text-center p-3 font-bold whitespace-nowrap min-w-[120px] sticky left-0 bg-blue-50 z-10">
+                    إجراءات
+                  </th>
                 </tr>
               </thead>
+
               <tbody>
                 {filteredStudents.map(student => (
                   <tr key={student.id} className="border-b hover:bg-blue-50 transition-colors">
@@ -210,46 +233,59 @@ export default function BasicInfoTab() {
                         onCheckedChange={(checked) => handleSelectStudent(student.id, checked)}
                       />
                     </td>
-                    <td className="p-3 text-blue-700 font-mono whitespace-nowrap">{student.student_id}</td>
-                    <td className="p-3 text-gray-600 whitespace-nowrap">{student.city || '-'}</td>
+
+                    <td className="p-3 text-blue-700 font-mono whitespace-nowrap">{student.student_id || '-'}</td>
                     <td className="p-3 text-gray-600 font-mono whitespace-nowrap">{student.national_id || '-'}</td>
-                    <td className="p-3 font-semibold text-gray-900 whitespace-nowrap">{student.full_name}</td>
+
+                    {/* ✅ هنا الإصلاح الحقيقي */}
+                    <td className="p-3 text-gray-700 font-mono whitespace-nowrap">{student.school_code || '-'}</td>
+                    <td className="p-3 text-gray-700 whitespace-nowrap">{student.school_name || '-'}</td>
+                    <td className="p-3 text-gray-700 font-mono whitespace-nowrap">{student.school_code_ministry || '-'}</td>
+
+                    <td className="p-3 font-semibold text-gray-900 whitespace-nowrap">{student.full_name || '-'}</td>
                     <td className="p-3 text-gray-700 whitespace-nowrap">{student.nationality || '-'}</td>
                     <td className="p-3 text-gray-600 whitespace-nowrap">{student.birth_date || '-'}</td>
+
                     <td className="p-3 whitespace-nowrap">
                       <span className="inline-block px-2 py-1 rounded text-sm bg-emerald-100 text-emerald-700">
-                        {student.grade_level}
+                        {student.grade_level || '-'}
                       </span>
                     </td>
+
                     <td className="p-3 whitespace-nowrap">
                       <span className="inline-block px-2 py-1 rounded text-sm bg-blue-100 text-blue-700 font-semibold">
-                        {student.grade_class}
+                        {student.grade_class ?? '-'}
                       </span>
                     </td>
+
                     <td className="p-3 text-gray-700 whitespace-nowrap">{student.class_division || '-'}</td>
                     <td className="p-3 text-gray-600 whitespace-nowrap">{student.city || '-'}</td>
                     <td className="p-3 text-gray-600 whitespace-nowrap">{student.district || '-'}</td>
+
                     <td className="p-3 sticky left-0 bg-white hover:bg-blue-50 z-10">
                       <div className="flex gap-2 justify-center whitespace-nowrap">
                         <Button onClick={() => handleEdit(student)} size="sm" variant="outline" className="hover:bg-blue-50">
                           <Edit className="w-4 h-4" />
                         </Button>
-                        <Button 
+
+                        <Button
                           onClick={() => {
                             if (confirm('هل أنت متأكد من حذف هذا الطالب؟')) {
                               deleteStudent.mutate(student.id);
                             }
                           }}
-                          size="sm" 
+                          size="sm"
                           variant="destructive"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
                     </td>
+
                   </tr>
                 ))}
               </tbody>
+
             </table>
           </div>
         </CardContent>
@@ -267,6 +303,7 @@ export default function BasicInfoTab() {
                 </Button>
               </div>
             </CardHeader>
+
             <CardContent className="p-6">
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -275,15 +312,41 @@ export default function BasicInfoTab() {
                     <Input
                       required
                       value={formData.student_id}
-                      onChange={(e) => setFormData({...formData, student_id: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, student_id: e.target.value })}
                     />
                   </div>
+
                   <div className="space-y-2">
                     <Label>رقم الهوية / الإقامة</Label>
                     <Input
                       value={formData.national_id}
-                      onChange={(e) => setFormData({...formData, national_id: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, national_id: e.target.value })}
                       maxLength={10}
+                    />
+                  </div>
+                </div>
+
+                {/* ✅ حقول المدرسة */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label>معرف المدرسة</Label>
+                    <Input
+                      value={formData.school_code}
+                      onChange={(e) => setFormData({ ...formData, school_code: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>اسم المدرسة</Label>
+                    <Input
+                      value={formData.school_name}
+                      onChange={(e) => setFormData({ ...formData, school_name: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>الرقم الوزاري</Label>
+                    <Input
+                      value={formData.school_code_ministry}
+                      onChange={(e) => setFormData({ ...formData, school_code_ministry: e.target.value })}
                     />
                   </div>
                 </div>
@@ -293,7 +356,7 @@ export default function BasicInfoTab() {
                   <Input
                     required
                     value={formData.full_name}
-                    onChange={(e) => setFormData({...formData, full_name: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
                   />
                 </div>
 
@@ -302,7 +365,7 @@ export default function BasicInfoTab() {
                     <Label>الجنسية</Label>
                     <Input
                       value={formData.nationality}
-                      onChange={(e) => setFormData({...formData, nationality: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, nationality: e.target.value })}
                     />
                   </div>
                   <div className="space-y-2">
@@ -310,14 +373,14 @@ export default function BasicInfoTab() {
                     <Input
                       type="date"
                       value={formData.birth_date}
-                      onChange={(e) => setFormData({...formData, birth_date: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
                     />
                   </div>
                   <div className="space-y-2">
                     <Label>مكان الميلاد</Label>
                     <Input
                       value={formData.place_of_birth}
-                      onChange={(e) => setFormData({...formData, place_of_birth: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, place_of_birth: e.target.value })}
                     />
                   </div>
                 </div>
@@ -327,7 +390,7 @@ export default function BasicInfoTab() {
                     <Label>المرحلة *</Label>
                     <Select
                       value={formData.grade_level}
-                      onValueChange={(value) => setFormData({...formData, grade_level: value})}
+                      onValueChange={(value) => setFormData({ ...formData, grade_level: value })}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -339,6 +402,7 @@ export default function BasicInfoTab() {
                       </SelectContent>
                     </Select>
                   </div>
+
                   <div className="space-y-2">
                     <Label>الصف *</Label>
                     <Input
@@ -347,14 +411,15 @@ export default function BasicInfoTab() {
                       min="1"
                       max="12"
                       value={formData.grade_class}
-                      onChange={(e) => setFormData({...formData, grade_class: parseInt(e.target.value)})}
+                      onChange={(e) => setFormData({ ...formData, grade_class: parseInt(e.target.value) })}
                     />
                   </div>
+
                   <div className="space-y-2">
                     <Label>الشعبة (الفصل)</Label>
                     <Input
                       value={formData.class_division}
-                      onChange={(e) => setFormData({...formData, class_division: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, class_division: e.target.value })}
                     />
                   </div>
                 </div>
@@ -363,7 +428,7 @@ export default function BasicInfoTab() {
                   <Label>عنوان السكن</Label>
                   <Input
                     value={formData.residential_address}
-                    onChange={(e) => setFormData({...formData, residential_address: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, residential_address: e.target.value })}
                   />
                 </div>
 
@@ -372,14 +437,14 @@ export default function BasicInfoTab() {
                     <Label>المدينة</Label>
                     <Input
                       value={formData.city}
-                      onChange={(e) => setFormData({...formData, city: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                     />
                   </div>
                   <div className="space-y-2">
                     <Label>الحي</Label>
                     <Input
                       value={formData.district}
-                      onChange={(e) => setFormData({...formData, district: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, district: e.target.value })}
                     />
                   </div>
                 </div>
@@ -388,7 +453,7 @@ export default function BasicInfoTab() {
                   <Label>ملاحظات</Label>
                   <Textarea
                     value={formData.notes}
-                    onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                     rows={3}
                   />
                 </div>
