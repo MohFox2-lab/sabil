@@ -235,6 +235,10 @@ export default function ExcelViewerTab() {
           }
           
           // البحث الذكي عن الحقول
+          let firstName = '';
+          let fatherName = '';
+          let grandfatherName = '';
+          let familyName = '';
           let fullName = '';
           let studentId = '';
           let nationalId = '';
