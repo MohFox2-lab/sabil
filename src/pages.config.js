@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import ExamsManagement from './pages/ExamsManagement';
 import GroupsSystem from './pages/GroupsSystem';
 import ImportStudentData from './pages/ImportStudentData';
+import ImportWizard from './pages/ImportWizard';
 import LeaveRequest from './pages/LeaveRequest';
 import MisconductList from './pages/MisconductList';
 import Pledges from './pages/Pledges';
@@ -18,7 +19,6 @@ import StudentGroupDistribution from './pages/StudentGroupDistribution';
 import StudentTracking from './pages/StudentTracking';
 import Students from './pages/Students';
 import UsersManagement from './pages/UsersManagement';
-import ImportWizard from './pages/ImportWizard';
 import __Layout from './Layout.jsx';
 
 
@@ -32,6 +32,7 @@ export const PAGES = {
     "ExamsManagement": ExamsManagement,
     "GroupsSystem": GroupsSystem,
     "ImportStudentData": ImportStudentData,
+    "ImportWizard": ImportWizard,
     "LeaveRequest": LeaveRequest,
     "MisconductList": MisconductList,
     "Pledges": Pledges,
@@ -43,7 +44,6 @@ export const PAGES = {
     "StudentTracking": StudentTracking,
     "Students": Students,
     "UsersManagement": UsersManagement,
-    "ImportWizard": ImportWizard,
 }
 
 export const pagesConfig = {

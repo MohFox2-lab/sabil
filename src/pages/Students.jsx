@@ -10,7 +10,9 @@ import {
   FileSignature,
   AlertTriangle,
   FileCheck,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Eye,
+  Edit
 } from 'lucide-react';
 import ContactInfoTab from '../components/students/ContactInfoTab';
 import StudentReportsTab from '../components/students/StudentReportsTab';
@@ -22,6 +24,7 @@ import SMSShieldTab from '../components/students/SMSShieldTab';
 import RegisterIncidentTab from '../components/affairs/RegisterIncidentTab';
 import BehaviorContractTab from '../components/students/BehaviorContractTab';
 import ExcelViewerTab from '../components/students/ExcelViewerTab';
+import ViewEditStudentsTab from '../components/students/ViewEditStudentsTab';
 
 
 export default function Students() {
@@ -32,9 +35,13 @@ export default function Students() {
         <p className="text-gray-600 mt-1">عرض وإدارة بيانات جميع الطلاب</p>
       </div>
 
-      <Tabs defaultValue="contact" className="w-full">
+      <Tabs defaultValue="view-edit" className="w-full">
         <TabsList className="h-auto flex flex-col gap-2 bg-transparent p-0">
           <div className="flex flex-wrap gap-2 justify-center">
+            <TabsTrigger value="view-edit" className="gap-2 bg-white border-2 border-cyan-300 text-cyan-700 data-[state=active]:bg-cyan-500 data-[state=active]:text-white data-[state=active]:border-cyan-500 px-3 py-2 text-sm">
+              <Eye className="w-4 h-4" />
+              <span className="truncate">معاينة وتعديل البيانات</span>
+            </TabsTrigger>
             <TabsTrigger value="contact" className="gap-2 bg-white border-2 border-emerald-300 text-emerald-700 data-[state=active]:bg-emerald-500 data-[state=active]:text-white data-[state=active]:border-emerald-500 px-3 py-2 text-sm">
               <Phone className="w-4 h-4" />
               <span className="truncate">بيانات الاتصال</span>
@@ -84,6 +91,10 @@ export default function Students() {
             </TabsTrigger>
           </div>
         </TabsList>
+
+        <TabsContent value="view-edit" className="mt-6">
+          <ViewEditStudentsTab />
+        </TabsContent>
 
         <TabsContent value="contact" className="mt-6">
           <ContactInfoTab />
