@@ -261,17 +261,16 @@ export default function ExcelViewerTab() {
       }
       
       setStatus(`✅ تم الحفظ: ${success} نجح | ${failed} فشل`);
-
+      
       // تحديث قائمة الطلاب في جميع الواجهات
       queryClient.invalidateQueries({ queryKey: ['students'] });
-
-      } catch (err) {
+    } catch (err) {
       console.error(err);
       setStatus(`❌ فشل الحفظ: ${err?.message}`);
-      } finally {
+    } finally {
       setLoading(false);
-      }
-      };
+    }
+  };
 
   return (
     <div className="space-y-4">
