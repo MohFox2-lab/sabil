@@ -22,7 +22,6 @@ import {
 } from 'lucide-react';
 
 const STUDENT_ATTRIBUTES = [
-  { value: 'student_id', label: 'رقم الطالب *', required: true },
   { value: 'national_id', label: 'رقم الهوية/الإقامة' },
   { value: 'full_name', label: 'الاسم الكامل *', required: true },
   { value: 'nationality', label: 'الجنسية' },
@@ -31,8 +30,8 @@ const STUDENT_ATTRIBUTES = [
   { value: 'school_code', label: 'معرف المدرسة' },
   { value: 'school_name', label: 'اسم المدرسة' },
   { value: 'school_code_ministry', label: 'الرقم الوزاري' },
-  { value: 'grade_level', label: 'المرحلة *', required: true },
-  { value: 'grade_class', label: 'الصف *', required: true },
+  { value: 'grade_level', label: 'المرحلة' },
+  { value: 'grade_class', label: 'الصف' },
   { value: 'class_division', label: 'الشعبة' },
   { value: 'residential_address', label: 'عنوان السكن' },
   { value: 'city', label: 'المدينة' },
@@ -125,8 +124,7 @@ export default function ImportWizardTab() {
       const autoMapping = {};
       headers.forEach(h => {
         const lower = h.toLowerCase();
-        if (lower.includes('رقم الطالب') || lower === 'student_id') autoMapping[h] = 'student_id';
-        else if (lower.includes('الاسم') || lower.includes('name')) autoMapping[h] = 'full_name';
+        if (lower.includes('الاسم') || lower.includes('name')) autoMapping[h] = 'full_name';
         else if (lower.includes('هوية') || lower.includes('national')) autoMapping[h] = 'national_id';
         else if (lower.includes('مدرسة') && lower.includes('معرف')) autoMapping[h] = 'school_code';
         else if (lower.includes('مدرسة') && lower.includes('اسم')) autoMapping[h] = 'school_name';
@@ -261,9 +259,9 @@ export default function ImportWizardTab() {
 
   const downloadSample = () => {
     const csv = [
-      'رقم الطالب,الاسم الكامل,رقم الهوية,معرف المدرسة,اسم المدرسة,الرقم الوزاري,المرحلة,الصف,الشعبة,المدينة,الحي,جوال ولي الأمر',
-      '12345,أحمد محمد علي,1234567890,SCH001,مدرسة النموذج,MIN001,متوسط,7,أ,الرياض,النخيل,0501234567',
-      '12346,فاطمة خالد سعد,2345678901,SCH001,مدرسة النموذج,MIN001,متوسط,8,ب,الرياض,الملز,0507654321'
+    'الاسم الكامل,رقم الهوية,معرف المدرسة,اسم المدرسة,الرقم الوزاري,المرحلة,الصف,الشعبة,المدينة,الحي,جوال ولي الأمر',
+    'أحمد محمد علي,1234567890,SCH001,مدرسة النموذج,MIN001,متوسط,7,أ,الرياض,النخيل,0501234567',
+    'فاطمة خالد سعد,2345678901,SCH001,مدرسة النموذج,MIN001,متوسط,8,ب,الرياض,الملز,0507654321'
     ].join('\n');
     
     const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
