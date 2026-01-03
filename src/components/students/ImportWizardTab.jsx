@@ -25,6 +25,10 @@ const STUDENT_ATTRIBUTES = [
   { value: 'student_id', label: 'رقم الطالب *', required: true },
   { value: 'national_id', label: 'رقم الهوية/الإقامة' },
   { value: 'full_name', label: 'الاسم الكامل *', required: true },
+  { value: 'first_name', label: 'الاسم الأول' },
+  { value: 'father_name', label: 'اسم الأب' },
+  { value: 'grandfather_name', label: 'اسم الجد' },
+  { value: 'family_name', label: 'اسم العائلة' },
   { value: 'nationality', label: 'الجنسية' },
   { value: 'birth_date', label: 'تاريخ الميلاد' },
   { value: 'place_of_birth', label: 'مكان الميلاد' },
@@ -125,7 +129,11 @@ export default function ImportWizardTab() {
       headers.forEach(h => {
         const lower = h.toLowerCase();
         if (lower.includes('رقم الطالب') || lower === 'student_id') autoMapping[h] = 'student_id';
-        else if (lower.includes('الاسم') || lower.includes('name')) autoMapping[h] = 'full_name';
+        else if (lower.includes('اسم الأول') || lower.includes('first')) autoMapping[h] = 'first_name';
+        else if (lower.includes('اسم الأب') || lower.includes('father')) autoMapping[h] = 'father_name';
+        else if (lower.includes('اسم الجد') || lower.includes('grandfather')) autoMapping[h] = 'grandfather_name';
+        else if (lower.includes('اسم العائلة') || lower.includes('family')) autoMapping[h] = 'family_name';
+        else if (lower.includes('الاسم الكامل') || lower.includes('الاسم') || lower.includes('full_name')) autoMapping[h] = 'full_name';
         else if (lower.includes('هوية') || lower.includes('national')) autoMapping[h] = 'national_id';
         else if (lower.includes('مدرسة') && lower.includes('معرف')) autoMapping[h] = 'school_code';
         else if (lower.includes('مدرسة') && lower.includes('اسم')) autoMapping[h] = 'school_name';
@@ -202,6 +210,29 @@ export default function ImportWizardTab() {
             }
           });
 
+          // 🧠 معالجة ذكية: إذا كان الاسم الكامل يحتوي على "ابن" نفصله تلقائياً
+          if (studentData.full_name && !studentData.first_name && studentData.full_name.includes('ابن')) {
+            const parts = studentData.full_name.split('ابن').map(p => p.trim());
+            if (parts.length >= 2) {
+              studentData.first_name = parts[0];
+              const remaining = parts.slice(1).join(' ').trim().split(/\s+/);
+              if (remaining.length >= 1) studentData.father_name = remaining[0];
+              if (remaining.length >= 2) studentData.grandfather_name = remaining[1];
+              if (remaining.length >= 3) studentData.family_name = remaining.slice(2).join(' ');
+            }
+          }
+          
+          // تجميع الاسم الكامل من الأجزاء إذا لم يكن موجوداً
+          if (!studentData.full_name && studentData.first_name) {
+            const nameParts = [
+              studentData.first_name,
+              studentData.father_name,
+              studentData.grandfather_name,
+              studentData.family_name
+            ].filter(Boolean);
+            studentData.full_name = nameParts.join(' ');
+          }
+
           // Set defaults
           if (!studentData.nationality) studentData.nationality = 'سعودي';
           if (!studentData.behavior_score) studentData.behavior_score = 80;
@@ -248,9 +279,9 @@ export default function ImportWizardTab() {
 
   const downloadSample = () => {
     const csv = [
-      'رقم الطالب,الاسم الكامل,رقم الهوية,معرف المدرسة,اسم المدرسة,الرقم الوزاري,المرحلة,الصف,الشعبة,المدينة,الحي,جوال ولي الأمر',
-      '12345,أحمد محمد علي,1234567890,SCH001,مدرسة النموذج,MIN001,متوسط,7,أ,الرياض,النخيل,0501234567',
-      '12346,فاطمة خالد سعد,2345678901,SCH001,مدرسة النموذج,MIN001,متوسط,8,ب,الرياض,الملز,0507654321'
+      'رقم الطالب,الاسم الكامل,الاسم الأول,اسم الأب,اسم الجد,اسم العائلة,رقم الهوية,معرف المدرسة,اسم المدرسة,الرقم الوزاري,المرحلة,الصف,الشعبة,المدينة,الحي,جوال ولي الأمر',
+      '12345,أحمد ابن محمد ابن علي السعيد,أحمد,محمد,علي,السعيد,1234567890,SCH001,مدرسة النموذج,MIN001,متوسط,7,أ,الرياض,النخيل,0501234567',
+      '12346,فاطمة خالد سعد,فاطمة,خالد,,,2345678901,SCH001,مدرسة النموذج,MIN001,متوسط,8,ب,الرياض,الملز,0507654321'
     ].join('\n');
     
     const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
