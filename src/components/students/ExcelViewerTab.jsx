@@ -13,8 +13,6 @@ import { Upload, Trash2, Download, FileSpreadsheet, Search, RotateCcw } from "lu
  * - يمنع مشكلة الصلاحيات بقراءة الملف فورًا إلى الذاكرة
  */
 
-const LS_KEY = "excel_viewer_last_preview_v1";
-
 async function ensureXLSX() {
   // نحاول استخدام window.XLSX لو محمّلة
   if (window.XLSX) return window.XLSX;
@@ -76,20 +74,7 @@ export default function ExcelViewerTab() {
   const [rows, setRows] = useState([]); // array of objects {header: value}
   const [search, setSearch] = useState("");
 
-  // استرجاع آخر معاينة (اختياري)
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(LS_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw);
-      if (parsed?.headers?.length && parsed?.rows?.length) {
-        setHeaders(parsed.headers);
-        setRows(parsed.rows);
-        setFileInfo(parsed.fileInfo || null);
-        setStatus("تم استرجاع آخر ملف تمت معاينته (محليًا فقط).");
-      }
-    } catch {}
-  }, []);
+
 
   const filtered = useMemo(() => {
     const t = search.trim();
@@ -160,14 +145,6 @@ export default function ExcelViewerTab() {
 
       setStatus(`تمت المعاينة ✅ (${dataRows.length} صف) — عرض فقط بدون حفظ في قاعدة البيانات.`);
 
-      // حفظ محلي (اختياري)
-      try {
-        localStorage.setItem(
-          LS_KEY,
-          JSON.stringify({ headers: fixedHeaders, rows: dataRows.slice(0, 5000), fileInfo: { name: file.name, sheet: sheetName } })
-        );
-      } catch {}
-
     } catch (err) {
       console.error(err);
       setStatus(`فشل: ${err?.message || "خطأ غير معروف"}`);
@@ -178,13 +155,12 @@ export default function ExcelViewerTab() {
   };
 
   const clearLocalPreview = () => {
-    if (!confirm("مسح المعاينة الحالية والمحلية؟ (لن يحذف أي بيانات من النظام)")) return;
+    if (!confirm("مسح المعاينة الحالية؟ (لن يحذف أي بيانات من النظام)")) return;
     setHeaders([]);
     setRows([]);
     setFileInfo(null);
     setSearch("");
     setStatus("تم المسح ✅");
-    try { localStorage.removeItem(LS_KEY); } catch {}
   };
 
   const downloadCsv = () => {
