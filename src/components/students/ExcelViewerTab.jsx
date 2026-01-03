@@ -226,17 +226,36 @@ export default function ExcelViewerTab() {
       
       for (const row of currentSheet.rows) {
         try {
-          const fullName = row['الاسم الكامل'] || row['full_name'] || row['الاسم'] || '';
-          const studentId = row['رقم الطالب'] || row['student_id'] || '';
+          // جمع قيم جميع الخلايا للتحقق من وجود بيانات
+          const allValues = Object.values(row).filter(v => v && String(v).trim() !== '');
           
-          // تجاهل الصفوف الفارغة تماماً
-          if (!fullName.trim() && !studentId.trim()) {
+          // تجاهل فقط الصفوف الفارغة تماماً
+          if (allValues.length === 0) {
             continue;
           }
           
+          // محاولة الحصول على الاسم من أي عمود يحتوي على "اسم" أو "name"
+          let fullName = '';
+          let studentId = '';
+          
+          for (const [key, value] of Object.entries(row)) {
+            const keyLower = String(key).toLowerCase();
+            if (!fullName && (keyLower.includes('اسم') || keyLower.includes('name'))) {
+              fullName = String(value || '');
+            }
+            if (!studentId && (keyLower.includes('رقم') && keyLower.includes('طالب') || keyLower.includes('student') && keyLower.includes('id'))) {
+              studentId = String(value || '');
+            }
+          }
+          
+          // إذا لم نجد اسم، نستخدم أول قيمة غير فارغة
+          if (!fullName.trim()) {
+            fullName = allValues[0] || '';
+          }
+          
           const studentData = {
-            student_id: studentId,
-            full_name: fullName,
+            student_id: studentId || row['student_id'] || row['رقم الطالب'] || '',
+            full_name: fullName || row['full_name'] || row['الاسم الكامل'] || row['الاسم'] || '',
             national_id: row['رقم الهوية'] || row['national_id'] || '',
             grade_level: row['المرحلة'] || row['grade_level'] || 'متوسط',
             grade_class: parseInt(row['الصف'] || row['grade_class'] || '1') || 1,
@@ -249,10 +268,12 @@ export default function ExcelViewerTab() {
             attendance_score: 100
           };
           
-          // الحد الأدنى من المتطلبات: اسم أو رقم طالب
-          if (studentData.full_name.trim() || studentData.student_id.trim()) {
+          // حفظ السجل إذا كان فيه اسم على الأقل
+          if (studentData.full_name.trim()) {
             await base44.entities.Student.create(studentData);
             success++;
+          } else {
+            failed++;
           }
         } catch (err) {
           failed++;
