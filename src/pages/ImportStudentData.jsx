@@ -130,6 +130,22 @@ export default function ImportStudentData() {
 
           // التحقق من وجود بيانات أساسية فقط
           if (!fullName || fullName.length < 2) {
+            // محاولة أخيرة: أخذ أي قيم نصية من أول 10 أعمدة
+            const allValues = Object.values(studentData).slice(0, 10);
+            const textValues = allValues.filter(v => 
+              v && 
+              typeof v === 'string' && 
+              v.trim().length > 1 && 
+              isNaN(v) && // ليس رقم
+              v.trim().length < 50 // ليس نص طويل جداً
+            );
+            
+            if (textValues.length >= 2) {
+              fullName = textValues.slice(0, 4).join(' ').trim();
+            }
+          }
+          
+          if (!fullName || fullName.length < 2) {
             throw new Error('الاسم مطلوب');
           }
 
@@ -193,14 +209,25 @@ export default function ImportStudentData() {
           results.success++;
         } catch (error) {
           results.failed++;
-          const studentName = studentData['full_name'] || 
-                              `${studentData['First name'] || ''} ${studentData['Family name'] || ''}`.trim() ||
-                              studentData['student_id'] || 
-                              studentData['UserID'] || 
-                              'غير معروف';
+          
+          // محاولة الحصول على أي معرف للطالب لعرضه في الخطأ
+          let studentIdentifier = 'غير معروف';
+          const allKeys = Object.keys(studentData);
+          const allValues = Object.values(studentData);
+          
+          // ابحث عن أي قيمة نصية في أول 7 أعمدة
+          for (let i = 0; i < Math.min(7, allValues.length); i++) {
+            const value = allValues[i];
+            if (value && typeof value === 'string' && value.trim()) {
+              studentIdentifier = value.toString().substring(0, 50);
+              break;
+            }
+          }
+          
           results.errors.push({
-            student: studentName,
-            error: error.message
+            student: studentIdentifier,
+            error: error.message,
+            columns: allKeys.join(', ').substring(0, 100)
           });
         }
       }
