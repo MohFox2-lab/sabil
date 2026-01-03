@@ -90,7 +90,7 @@ export default function BasicInfoTab() {
   const deleteMultipleStudents = useMutation({
     mutationFn: async (ids) => {
       // حذف متوازي باستخدام دفعات لتجنب حمل الخادم
-      const batchSize = 50;
+      const batchSize = 10;
       const batches = [];
       
       for (let i = 0; i < ids.length; i += batchSize) {
@@ -100,6 +100,10 @@ export default function BasicInfoTab() {
       
       for (const batch of batches) {
         await Promise.all(batch.map(id => base44.entities.Student.delete(id)));
+        // تأخير بسيط بين الدفعات لتجنب تجاوز حد المعدل
+        if (batches.indexOf(batch) < batches.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
       }
     },
     onMutate: () => {
