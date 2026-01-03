@@ -133,6 +133,7 @@ export default function Layout({ children, currentPageName }) {
         { label: 'نظام الرسائل النصية', page: 'SMSSystem', icon: MessageSquare },
         { label: 'المجموعات والمناوبين', page: 'GroupsSystem', icon: Users },
         { label: 'توزيع الطلاب على المجموعات', page: 'StudentGroupDistribution', icon: Users },
+        { label: 'استيراد ملفات (Excel, Word, PDF, Text)', page: 'ImportFiles', icon: Upload },
         { label: 'طباعة', icon: Printer, action: 'print' },
         { label: 'تحميل PDF', icon: Download, action: 'pdf' },
         { type: 'separator' },
