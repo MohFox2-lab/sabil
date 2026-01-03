@@ -186,9 +186,10 @@ export default function BasicInfoTab() {
               onClick={handleDeleteSelected}
               variant="destructive"
               className="gap-2"
+              disabled={isDeleting}
             >
               <Trash2 className="w-4 h-4" />
-              حذف المحدد ({selectedStudents.length})
+              {isDeleting ? `جاري الحذف... (${selectedStudents.length})` : `حذف المحدد (${selectedStudents.length})`}
             </Button>
           )}
         </div>
