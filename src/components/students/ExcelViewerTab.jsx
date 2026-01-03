@@ -256,7 +256,7 @@ export default function ExcelViewerTab() {
             if (!val) continue;
             
             // الاسم الأول
-            if (!firstName && (keyLower.includes('أول') || keyLower.includes('اول') || keyLower.includes('first'))) {
+            if (!firstName && (keyLower.includes('أول') || keyLower.includes('اول') || keyLower.includes('first') || keyLower.includes('الاسم'))) {
               if (isNaN(val) || val.length > 2) {
                 firstName = val;
                 continue;
@@ -264,7 +264,7 @@ export default function ExcelViewerTab() {
             }
             
             // اسم الأب
-            if (!fatherName && (keyLower.includes('أب') || keyLower.includes('اب') || keyLower.includes('second') || keyLower.includes('father'))) {
+            if (!fatherName && (keyLower.includes('أب') || keyLower.includes('اب') || keyLower.includes('second') || keyLower.includes('father') || keyLower.includes('الثاني'))) {
               if (isNaN(val) || val.length > 2) {
                 fatherName = val;
                 continue;
@@ -272,7 +272,7 @@ export default function ExcelViewerTab() {
             }
             
             // اسم الجد
-            if (!grandfatherName && (keyLower.includes('جد') || keyLower.includes('third') || keyLower.includes('grandfather'))) {
+            if (!grandfatherName && (keyLower.includes('جد') || keyLower.includes('third') || keyLower.includes('grandfather') || keyLower.includes('الثالث'))) {
               if (isNaN(val) || val.length > 2) {
                 grandfatherName = val;
                 continue;
@@ -280,7 +280,7 @@ export default function ExcelViewerTab() {
             }
             
             // اسم العائلة
-            if (!familyName && (keyLower.includes('عائل') || keyLower.includes('عايل') || keyLower.includes('family') || keyLower.includes('last'))) {
+            if (!familyName && (keyLower.includes('عائل') || keyLower.includes('عايل') || keyLower.includes('family') || keyLower.includes('last') || keyLower.includes('الرابع'))) {
               if (isNaN(val) || val.length > 2) {
                 familyName = val;
                 continue;
@@ -288,7 +288,7 @@ export default function ExcelViewerTab() {
             }
             
             // الاسم الكامل
-            if (!fullName && (keyLower.includes('كامل') || keyLower === 'اسم' || keyLower === 'full_name')) {
+            if (!fullName && (keyLower.includes('كامل') || keyLower === 'اسم' || keyLower === 'الاسم' || keyLower === 'full_name')) {
               if (isNaN(val) || val.length > 5) {
                 fullName = val;
                 continue;
@@ -296,7 +296,7 @@ export default function ExcelViewerTab() {
             }
             
             // رقم الطالب
-            if (!studentId && keyLower.includes('رقم') && keyLower.includes('طالب')) {
+            if (!studentId && (keyLower.includes('رقم') || keyLower.includes('طالب') || keyLower.includes('student'))) {
               studentId = val;
               continue;
             }
@@ -320,7 +320,7 @@ export default function ExcelViewerTab() {
             }
             
             // الصف
-            if (!gradeClass && keyLower === 'صف') {
+            if (!gradeClass && keyLower.includes('صف')) {
               gradeClass = val;
               continue;
             }
@@ -341,6 +341,21 @@ export default function ExcelViewerTab() {
             if (!schoolCodeMinistry && keyLower.includes('وزار')) {
               schoolCodeMinistry = val;
               continue;
+            }
+          }
+          
+          // إذا لم نجد أسماء بالبحث عن الحقول، نأخذ أول 4 قيم نصية
+          if (!fullName && !firstName) {
+            const textValues = Object.values(row).filter(v => {
+              const str = String(v || '').trim();
+              return str && (isNaN(str) || str.length > 3);
+            });
+            
+            if (textValues.length > 0) {
+              firstName = textValues[0] || '';
+              fatherName = textValues[1] || '';
+              grandfatherName = textValues[2] || '';
+              familyName = textValues[3] || '';
             }
           }
           
