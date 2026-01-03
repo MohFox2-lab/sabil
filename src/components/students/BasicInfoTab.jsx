@@ -185,6 +185,8 @@ export default function BasicInfoTab() {
                   </th>
                   <th className="text-center p-3 font-bold text-sm border-l border-blue-500 min-w-[100px]">رقم الطالب</th>
                   <th className="text-center p-3 font-bold text-sm border-l border-blue-500 min-w-[100px]">معرف المدرسة</th>
+                  <th className="text-center p-3 font-bold text-sm border-l border-blue-500 min-w-[150px]">اسم المدرسة</th>
+                  <th className="text-center p-3 font-bold text-sm border-l border-blue-500 min-w-[100px]">الرقم الوزاري</th>
                   <th className="text-center p-3 font-bold text-sm border-l border-blue-500 min-w-[120px]">رقم الهوية</th>
                   <th className="text-center p-3 font-bold text-sm border-l border-blue-500 min-w-[200px]">الاسم الأول</th>
                   <th className="text-center p-3 font-bold text-sm border-l border-blue-500 min-w-[100px]">اسم الأب</th>
@@ -214,6 +216,8 @@ export default function BasicInfoTab() {
                       </td>
                       <td className="p-2 text-center text-blue-700 font-mono text-sm border-l border-gray-200">{student.student_id}</td>
                       <td className="p-2 text-center text-gray-600 text-sm border-l border-gray-200">{student.school_code || '-'}</td>
+                      <td className="p-2 text-center text-gray-700 text-sm border-l border-gray-200">{student.school_name || '-'}</td>
+                      <td className="p-2 text-center text-gray-600 font-mono text-sm border-l border-gray-200">{student.ministry_school_code || '-'}</td>
                       <td className="p-2 text-center text-gray-600 font-mono text-sm border-l border-gray-200">{student.national_id || '-'}</td>
                       <td className="p-2 text-center font-semibold text-gray-900 text-sm border-l border-gray-200">{firstName}</td>
                       <td className="p-2 text-center text-gray-800 text-sm border-l border-gray-200">{secondName}</td>

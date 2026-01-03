@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2, Download } from 'lucide-react';
+import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2, Download, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import * as XLSX from 'xlsx';
 
@@ -18,11 +18,11 @@ export default function ImportStudentData() {
       setUploading(true);
       setResult(null);
 
-      // قراءة ملف Excel مباشرة
+      // قراءة ملف Excel
       const data = await file.arrayBuffer();
       const workbook = XLSX.read(data);
 
-      // قراءة جميع الشيتات ودمج البيانات
+      // قراءة جميع الشيتات
       const students = [];
       workbook.SheetNames.forEach(sheetName => {
         const worksheet = workbook.Sheets[sheetName];
@@ -31,20 +31,17 @@ export default function ImportStudentData() {
       });
       
       if (students.length === 0) {
-        throw new Error('لم يتم العثور على بيانات طلاب في الملف');
+        throw new Error('لم يتم العثور على بيانات في الملف');
       }
 
-      // استيراد حسب ترتيب الأعمدة فقط (Index-Based Mapping)
-      const getValueByIndex = (row, headers, columnName) => {
-        const index = headers.findIndex(h => h === columnName);
-        if (index === -1) return null;
-        const value = Object.values(row)[index];
-        if (value === null || value === undefined || value === '') return null;
+      // ⚠️ STRICT COLUMN MAPPING ONLY - NO PARSING
+      const getColumnValue = (row, columnName) => {
+        // قراءة مباشرة من اسم العمود فقط
+        if (!(columnName in row)) return '';
+        const value = row[columnName];
+        if (value === null || value === undefined || value === '') return '';
         return value.toString().trim();
       };
-
-      // الحصول على أسماء الأعمدة من أول صف
-      const headers = students.length > 0 ? Object.keys(students[0]) : [];
 
       const results = {
         success: 0,
@@ -52,40 +49,55 @@ export default function ImportStudentData() {
         errors: []
       };
 
-      for (const studentData of students) {
+      for (const rowData of students) {
         try {
-          // تجاهل الصفوف الفارغة تماماً
-          const allValues = Object.values(studentData);
+          // تجاهل الصفوف الفارغة
+          const allValues = Object.values(rowData);
           const hasAnyData = allValues.some(v => v && v.toString().trim());
           if (!hasAnyData) {
             continue;
           }
 
-          // قراءة البيانات حسب ترتيب الأعمدة فقط
-          const studentId = getValueByIndex(studentData, headers, 'UserID');
-          const schoolCode = getValueByIndex(studentData, headers, 'School code');
-          const nationalId = getValueByIndex(studentData, headers, 'Identification');
-          const firstName = getValueByIndex(studentData, headers, 'First name') || '';
-          const secondName = getValueByIndex(studentData, headers, 'Second name') || '';
-          const thirdName = getValueByIndex(studentData, headers, 'Third name') || '';
-          const familyName = getValueByIndex(studentData, headers, 'Family name') || '';
+          // ✅ STRICT MAPPING - READ AS-IS
+          const studentId = getColumnValue(rowData, 'UserID');
+          const schoolCode = getColumnValue(rowData, 'School code');
+          const schoolName = getColumnValue(rowData, 'School name');
+          const ministryCode = getColumnValue(rowData, 'School code (وزاري)');
+          const nationalId = getColumnValue(rowData, 'Identification');
+          
+          // ⚠️ NO NAME PARSING - READ EACH COLUMN AS RAW STRING
+          const firstName = getColumnValue(rowData, 'First name');
+          const secondName = getColumnValue(rowData, 'Second name');
+          const thirdName = getColumnValue(rowData, 'Third name');
+          const familyName = getColumnValue(rowData, 'Family name');
 
-          // التحقق من وجود اسم واحد على الأقل
+          // ❌ ABORT IF NAME NORMALIZATION DETECTED
           if (!firstName && !secondName && !thirdName && !familyName) {
-            throw new Error('يجب أن يحتوي السجل على اسم واحد على الأقل');
+            throw new Error('⚠️ Name parsing is disabled. Use strict column mapping only.');
           }
 
-          // تجميع الاسم الكامل كما هو بدون أي تعديل
+          // ✅ SIMPLE CONCATENATION ONLY (NO ANALYSIS)
           const fullName = [firstName, secondName, thirdName, familyName]
             .filter(n => n)
             .join(' ')
             .trim();
 
-          // إنشاء سجل الطالب
+          if (!fullName) {
+            throw new Error('الاسم الكامل مطلوب');
+          }
+
+          // ✅ VALIDATION RULES
+          if (schoolName && !isNaN(schoolName)) {
+            throw new Error('اسم المدرسة لا يجب أن يكون رقمي');
+          }
+
+          // إنشاء سجل الطالب بدون أي تعديل
           const studentRecord = {
             student_id: studentId || `AUTO_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            school_code: schoolCode || '',
-            national_id: nationalId || '',
+            school_code: schoolCode,
+            school_name: schoolName,
+            ministry_school_code: ministryCode,
+            national_id: nationalId,
             first_name: firstName,
             second_name: secondName,
             third_name: thirdName,
@@ -105,7 +117,7 @@ export default function ImportStudentData() {
           results.failed++;
           
           let studentIdentifier = 'غير معروف';
-          const allValues = Object.values(studentData);
+          const allValues = Object.values(rowData);
           
           for (let i = 0; i < Math.min(7, allValues.length); i++) {
             const value = allValues[i];
@@ -156,25 +168,14 @@ export default function ImportStudentData() {
   };
 
   const downloadSampleFile = () => {
-    // بيانات نموذجية وفق النموذج الوزاري
     const sampleData = [
-      ['UserID', 'School code', 'Identification', 'First name', 'Second name', 'Third name', 'Family name', 'grade_level', 'grade_class', 'class_division'],
-      ['13515195', '53480', '1008810262', 'علي', 'حيي', 'حيي', 'الصنعاني', 'متوسط', '1', 'أ'],
-      ['17305163', '53480', '1089491764', 'عبدالرحمن', 'خيري', 'خيري', 'العصوري', 'متوسط', '1', 'أ'],
-      ['18519179', '53480', '1049581083', 'سلمان', 'سوير', 'سوير', 'البلوي', 'متوسط', '1', 'ب'],
-      ['17245108', '53480', '1085447490', 'عبدالعزيز', 'راشد', 'راشد', 'العتيبي', 'متوسط', '2', 'أ'],
-      ['15678234', '53480', '1098765432', 'فاطمة', 'عبدالله', 'محمد', 'القحطاني', 'متوسط', '2', 'ب'],
-      ['16789345', '53480', '1087654321', 'محمد', 'سعد', 'علي', 'الغامدي', 'متوسط', '3', 'أ'],
-      ['14567890', '53480', '1076543210', 'نورة', 'فهد', 'عبدالعزيز', 'الدوسري', 'ثانوي', '1', 'أ'],
-      ['13456789', '53480', '1065432109', 'خالد', 'يوسف', 'حسن', 'الحربي', 'ثانوي', '1', 'ب'],
-      ['12345678', '53480', '1054321098', 'سارة', 'إبراهيم', 'ناصر', 'الشمري', 'ابتدائي', '6', 'أ'],
-      ['11234567', '53480', '1043210987', 'أحمد', 'مبارك', 'سلطان', 'المطيري', 'ابتدائي', '6', 'ب']
+      ['UserID', 'School code', 'School name', 'School code (وزاري)', 'Identification', 'First name', 'Second name', 'Third name', 'Family name'],
+      ['13515195', '53480', 'مدرسة النور المتوسطة', '12345', '1008810262', 'علي', 'حيي', 'حيي', 'الصنعاني'],
+      ['17305163', '53480', 'مدرسة النور المتوسطة', '12345', '1089491764', 'عبدالرحمن', 'خيري', 'خيري', 'العصوري'],
+      ['18519179', '53480', 'مدرسة النور المتوسطة', '12345', '1049581083', 'سلمان', 'سوير', 'سوير', 'البلوي']
     ];
 
-    // تحويل البيانات إلى CSV
     const csvContent = sampleData.map(row => row.join(',')).join('\n');
-    
-    // إنشاء Blob وتحميل الملف
     const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -190,8 +191,8 @@ export default function ImportStudentData() {
     <div className="space-y-6" dir="rtl">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">تحميل بيانات الطلاب (بيانات أساسية)</h1>
-          <p className="text-gray-600 mt-1">استيراد البيانات الأساسية للطلاب من ملف Excel</p>
+          <h1 className="text-3xl font-bold text-gray-900">استيراد بيانات الطلاب</h1>
+          <p className="text-gray-600 mt-1">استيراد صارم بدون تحليل ذكي</p>
         </div>
         <Button
           onClick={downloadSampleFile}
@@ -203,72 +204,101 @@ export default function ImportStudentData() {
         </Button>
       </div>
 
-      {/* Instructions */}
-      <Card>
-        <CardHeader className="bg-blue-50">
+      {/* STRICT RULES WARNING */}
+      <Card className="border-4 border-red-300 bg-red-50">
+        <CardHeader className="bg-red-600 text-white">
           <CardTitle className="flex items-center gap-2">
-            <FileSpreadsheet className="w-5 h-5" />
-            تعليمات الاستيراد
+            <AlertTriangle className="w-6 h-6" />
+            قواعد الاستيراد الصارمة
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-6 space-y-4">
-          <div>
-            <h4 className="font-bold mb-2">الحقول في ملف Excel:</h4>
-            
-            <div className="bg-green-50 border-2 border-green-300 p-4 rounded-lg mb-4">
-              <h5 className="font-bold text-green-800 mb-3">🤖 الفهم الذكي التلقائي (Auto-Mapping)</h5>
-              <p className="text-sm text-green-700 mb-3">
-                النظام يفهم الحقول تلقائياً بغض النظر عن ترتيبها أو أسمائها المحددة:
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                <div className="bg-white p-3 rounded border border-green-200">
-                  <span className="font-bold text-green-900">رقم الطالب</span>
-                  <p className="text-gray-600 text-xs mt-1">UserID أو student_id أو رقم الطالب</p>
-                </div>
-                <div className="bg-white p-3 rounded border border-green-200">
-                  <span className="font-bold text-green-900">رقم الهوية</span>
-                  <p className="text-gray-600 text-xs mt-1">Identification أو national_id أو رقم الهوية</p>
-                </div>
-                <div className="bg-white p-3 rounded border border-green-200">
-                  <span className="font-bold text-green-900">الاسم</span>
-                  <p className="text-gray-600 text-xs mt-1">اسم واحد أو أربعة أسماء منفصلة</p>
-                </div>
-                <div className="bg-white p-3 rounded border border-green-200">
-                  <span className="font-bold text-green-900">معرف المدرسة</span>
-                  <p className="text-gray-600 text-xs mt-1">School code أو معرف المدرسة (اختياري)</p>
-                </div>
-              </div>
-              <p className="text-green-700 font-semibold mt-3 text-sm">
-                ✨ فقط تأكد من وجود <strong>اسم الطالب</strong> - باقي البيانات اختيارية
-              </p>
-            </div>
-
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <h5 className="font-bold text-blue-700 mb-2">📝 أمثلة على الأعمدة المقبولة</h5>
-              <div className="grid grid-cols-1 gap-2 text-sm text-blue-800">
-                <div>✓ الأسماء المجزأة: First name, Second name, Third name, Family name</div>
-                <div>✓ الاسم الكامل: full_name أو الاسم الكامل</div>
-                <div>✓ المرحلة: grade_level أو المرحلة أو المستوى</div>
-                <div>✓ الصف: grade_class أو الصف أو class</div>
-                <div>✓ الشعبة: class_division أو الشعبة أو الفصل</div>
-              </div>
-            </div>
-          </div>
-
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              <strong>كيفية عمل النظام:</strong>
-              <ul className="list-disc mr-6 mt-2 space-y-1">
-                <li><strong>✅ يقبل جميع صيغ Excel</strong> (.xlsx, .xls, .csv)</li>
-                <li><strong>✅ يقرأ جميع الشيتات تلقائياً</strong> ويدمج البيانات</li>
-                <li>النظام <strong>يفهم البيانات تلقائياً</strong> من أسماء الأعمدة</li>
-                <li>يدمج الأسماء المجزأة (الاسم الأول + الأب + الجد + العائلة) تلقائياً</li>
-                <li>الأعمدة الإضافية تُتجاهل ولا تسبب فشل الاستيراد</li>
-                <li>البيانات الناقصة تُكمل بقيم افتراضية</li>
+        <CardContent className="p-6">
+          <div className="space-y-4">
+            <div className="bg-white p-4 rounded-lg border-2 border-red-200">
+              <h4 className="font-bold text-red-900 mb-3">✅ المُفعّل فقط:</h4>
+              <ul className="space-y-2 text-sm text-gray-800">
+                <li>• القراءة المباشرة من أسماء الأعمدة (Header-Based Mapping)</li>
+                <li>• القيم تُقرأ كما هي بدون أي تعديل</li>
               </ul>
-            </AlertDescription>
-          </Alert>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg border-2 border-red-200">
+              <h4 className="font-bold text-red-900 mb-3">❌ المُعطّل تماماً:</h4>
+              <ul className="space-y-2 text-sm text-gray-800">
+                <li>• التحليل الذكي (Smart Parsing)</li>
+                <li>• تطبيع الأسماء (Name Normalization)</li>
+                <li>• تقسيم الأسماء بالذكاء الاصطناعي (AI Name Split)</li>
+                <li>• أي معالجة لغوية أو دلالية</li>
+              </ul>
+            </div>
+
+            <div className="bg-yellow-50 p-4 rounded-lg border-2 border-yellow-300">
+              <h4 className="font-bold text-yellow-900 mb-3">🟦 تفصيل الأعمدة المطلوبة:</h4>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b-2 border-yellow-300">
+                    <th className="text-right p-2">عمود Excel</th>
+                    <th className="text-right p-2">الحقل المستهدف</th>
+                    <th className="text-right p-2">القاعدة</th>
+                  </tr>
+                </thead>
+                <tbody className="text-gray-800">
+                  <tr className="border-b border-yellow-200">
+                    <td className="p-2 font-mono">UserID</td>
+                    <td className="p-2">رقم الطالب</td>
+                    <td className="p-2">مطلوب</td>
+                  </tr>
+                  <tr className="border-b border-yellow-200">
+                    <td className="p-2 font-mono">School code</td>
+                    <td className="p-2">معرف المدرسة</td>
+                    <td className="p-2">معرف داخلي</td>
+                  </tr>
+                  <tr className="border-b border-yellow-200">
+                    <td className="p-2 font-mono">School name</td>
+                    <td className="p-2">اسم المدرسة</td>
+                    <td className="p-2">نص فقط</td>
+                  </tr>
+                  <tr className="border-b border-yellow-200">
+                    <td className="p-2 font-mono">School code (وزاري)</td>
+                    <td className="p-2">الرقم الوزاري</td>
+                    <td className="p-2">رقم وزاري</td>
+                  </tr>
+                  <tr className="border-b border-yellow-200">
+                    <td className="p-2 font-mono">Identification</td>
+                    <td className="p-2">رقم الهوية</td>
+                    <td className="p-2">كما هو</td>
+                  </tr>
+                  <tr className="border-b border-yellow-200 bg-green-50">
+                    <td className="p-2 font-mono">First name</td>
+                    <td className="p-2">الاسم الأول</td>
+                    <td className="p-2 font-bold">اسم الطالب فقط</td>
+                  </tr>
+                  <tr className="border-b border-yellow-200 bg-green-50">
+                    <td className="p-2 font-mono">Second name</td>
+                    <td className="p-2">اسم الأب</td>
+                    <td className="p-2 font-bold">اسم الأب فقط</td>
+                  </tr>
+                  <tr className="border-b border-yellow-200 bg-green-50">
+                    <td className="p-2 font-mono">Third name</td>
+                    <td className="p-2">اسم الجد</td>
+                    <td className="p-2 font-bold">اسم الجد فقط</td>
+                  </tr>
+                  <tr className="bg-green-50">
+                    <td className="p-2 font-mono">Family name</td>
+                    <td className="p-2">اسم العائلة</td>
+                    <td className="p-2 font-bold">اسم العائلة فقط</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                <strong>❌ ممنوع:</strong> الدمج، التفكيك، التفسير اللغوي، إضافة أو إزالة "بن" أو "آل"
+              </AlertDescription>
+            </Alert>
+          </div>
         </CardContent>
       </Card>
 
@@ -313,7 +343,7 @@ export default function ImportStudentData() {
               {uploading ? (
                 <>
                   <Loader2 className="w-5 h-5 ml-2 animate-spin" />
-                  جاري قراءة الملف واستيراد البيانات...
+                  جاري الاستيراد...
                 </>
               ) : (
                 <>
@@ -346,22 +376,12 @@ export default function ImportStudentData() {
           </CardHeader>
           <CardContent className="p-6">
             {result.error ? (
-              <div className="space-y-4">
-                <Alert variant="destructive" className="border-4 border-red-500">
-                  <AlertCircle className="h-5 w-5" />
-                  <AlertDescription className="text-lg font-bold">
-                    السبب: {result.error}
-                  </AlertDescription>
-                </Alert>
-                <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
-                  <p className="text-sm text-blue-800 font-semibold mb-2">💡 حلول مقترحة:</p>
-                  <ul className="text-sm text-blue-700 space-y-1 mr-4">
-                    <li>• تأكد من أن الملف بصيغة Excel (.xlsx, .xls) أو CSV</li>
-                    <li>• تأكد من وجود بيانات في الملف</li>
-                    <li>• تأكد من وجود عمود للأسماء</li>
-                  </ul>
-                </div>
-              </div>
+              <Alert variant="destructive">
+                <AlertCircle className="h-5 w-5" />
+                <AlertDescription className="text-lg font-bold">
+                  {result.error}
+                </AlertDescription>
+              </Alert>
             ) : (
               <div className="space-y-4">
                 <div className="bg-green-100 border-4 border-green-500 p-8 rounded-lg text-center">
@@ -370,53 +390,27 @@ export default function ImportStudentData() {
                 </div>
 
                 {result.failed > 0 && (
-                  <div className="bg-orange-100 border-4 border-orange-500 p-6 rounded-lg text-center">
-                    <p className="text-4xl font-bold text-orange-700 mb-2">{result.failed}</p>
-                    <p className="text-xl text-orange-800 font-bold">طالب فشل استيرادهم ⚠️</p>
-                  </div>
-                )}
+                  <>
+                    <div className="bg-orange-100 border-4 border-orange-500 p-6 rounded-lg text-center">
+                      <p className="text-4xl font-bold text-orange-700 mb-2">{result.failed}</p>
+                      <p className="text-xl text-orange-800 font-bold">طالب فشل استيرادهم ⚠️</p>
+                    </div>
 
-                {result.errors.length > 0 && (
-                  <div>
-                    <h4 className="font-bold mb-3 text-red-700 text-lg">الأخطاء:</h4>
                     <div className="bg-red-50 border-2 border-red-200 p-4 rounded-lg max-h-96 overflow-y-auto space-y-3">
                       {result.errors.map((err, idx) => (
-                        <div key={idx} className="bg-white p-3 rounded-lg border border-red-200 shadow-sm">
-                          <div className="flex items-start gap-2">
-                            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-                            <div className="flex-1">
-                              <p className="font-bold text-gray-800 mb-1">
-                                الطالب: {err.student}
-                              </p>
-                              <p className="text-sm text-red-700 mb-1">
-                               <span className="font-semibold">السبب:</span> {err.error}
-                              </p>
-                              {err.columns && (
-                               <p className="text-xs text-gray-500 mt-1 bg-gray-50 p-2 rounded">
-                                 <span className="font-semibold">الأعمدة:</span> {err.columns}
-                               </p>
-                              )}
-                              </div>
-                              </div>
-                              </div>
+                        <div key={idx} className="bg-white p-3 rounded-lg border border-red-200">
+                          <p className="font-bold text-gray-800">الطالب: {err.student}</p>
+                          <p className="text-sm text-red-700"><span className="font-semibold">السبب:</span> {err.error}</p>
+                        </div>
                       ))}
                     </div>
-                    <div className="mt-4 bg-blue-50 border border-blue-200 p-4 rounded-lg">
-                      <p className="text-sm text-blue-800 font-semibold mb-2">💡 نصائح لحل المشاكل:</p>
-                      <ul className="text-sm text-blue-700 space-y-1 mr-4">
-                        <li>• تأكد من وجود عمود للاسم (كامل أو مجزأ)</li>
-                        <li>• تأكد من عدم ترك صفوف الأسماء فارغة تماماً</li>
-                        <li>• النظام يتجاهل البيانات الناقصة ويكملها تلقائياً</li>
-                        <li>• إذا فشل استيراد طالب، تحقق من وجود اسمه في الملف</li>
-                      </ul>
-                    </div>
-                  </div>
+                  </>
                 )}
 
                 <Alert>
                   <CheckCircle className="h-4 w-4" />
                   <AlertDescription>
-                    تم تحديث قائمة الطلاب. يمكنك الآن الذهاب إلى "شؤون الطلاب" لعرض البيانات المستوردة.
+                    تم الاستيراد. يمكنك الآن عرض البيانات في "شؤون الطلاب".
                   </AlertDescription>
                 </Alert>
               </div>
