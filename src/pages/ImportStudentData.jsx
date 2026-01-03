@@ -34,13 +34,65 @@ export default function ImportStudentData() {
         throw new Error('لم يتم العثور على بيانات طلاب في الملف');
       }
 
-      // 3. فهم البيانات تلقائياً (Auto-Mapping)
+      // 3. فهم البيانات تلقائياً بذكاء (Smart Auto-Mapping)
       const autoMapField = (data, possibleKeys) => {
+        // البحث بالمفاتيح المحددة أولاً
         for (const key of possibleKeys) {
-          if (data[key] && data[key].toString().trim()) {
-            return data[key].toString().trim();
+          const value = data[key];
+          if (value !== null && value !== undefined && value.toString().trim()) {
+            return value.toString().trim();
           }
         }
+        
+        // البحث بالتشابه في أسماء الأعمدة (case insensitive)
+        const dataKeys = Object.keys(data);
+        for (const possibleKey of possibleKeys) {
+          const lowerPossible = possibleKey.toLowerCase();
+          for (const dataKey of dataKeys) {
+            const lowerDataKey = dataKey.toLowerCase();
+            if (lowerDataKey.includes(lowerPossible) || lowerPossible.includes(lowerDataKey)) {
+              const value = data[dataKey];
+              if (value !== null && value !== undefined && value.toString().trim()) {
+                return value.toString().trim();
+              }
+            }
+          }
+        }
+        
+        return null;
+      };
+
+      // دالة ذكية لاستخراج الأسماء من أي أعمدة
+      const extractNames = (studentData) => {
+        const keys = Object.keys(studentData);
+        const names = [];
+        
+        // البحث عن أعمدة الأسماء (عادة تكون متتالية)
+        for (const key of keys) {
+          const value = studentData[key];
+          const lowerKey = key.toLowerCase();
+          
+          // تحقق إذا كان العمود يحتوي على اسم
+          if (value && value.toString().trim() && 
+              (lowerKey.includes('name') || 
+               lowerKey.includes('اسم') || 
+               lowerKey.includes('first') || 
+               lowerKey.includes('second') || 
+               lowerKey.includes('third') || 
+               lowerKey.includes('family') ||
+               lowerKey.includes('الأول') ||
+               lowerKey.includes('الأب') ||
+               lowerKey.includes('الجد') ||
+               lowerKey.includes('العائلة'))) {
+            names.push(value.toString().trim());
+          }
+        }
+        
+        // إذا وجدنا أسماء، ادمجها
+        if (names.length > 0) {
+          return names.join(' ').replace(/\s+/g, ' ').trim();
+        }
+        
         return null;
       };
 
@@ -53,17 +105,27 @@ export default function ImportStudentData() {
       for (const studentData of students) {
         try {
           // فهم الحقول الأساسية تلقائياً
-          const studentId = autoMapField(studentData, ['UserID', 'student_id', 'رقم الطالب', 'الرقم الطالبي']);
-          const nationalId = autoMapField(studentData, ['Identification', 'national_id', 'رقم الهوية', 'الهوية']);
+          const studentId = autoMapField(studentData, ['UserID', 'userid', 'user_id', 'student_id', 'رقم الطالب', 'الرقم', 'id']);
+          const nationalId = autoMapField(studentData, ['Identification', 'identification', 'national_id', 'رقم الهوية', 'الهوية']);
 
-          // دمج الأسماء إذا كانت مجزأة
-          let fullName = autoMapField(studentData, ['full_name', 'الاسم الكامل', 'اسم الطالب']);
+          // استخراج الاسم الكامل بذكاء
+          let fullName = autoMapField(studentData, ['full_name', 'fullname', 'الاسم الكامل', 'اسم الطالب', 'name']);
+          
           if (!fullName) {
-            const firstName = autoMapField(studentData, ['First name', 'الاسم الأول']) || '';
-            const secondName = autoMapField(studentData, ['Second name', 'اسم الأب']) || '';
-            const thirdName = autoMapField(studentData, ['Third name', 'اسم الجد']) || '';
-            const familyName = autoMapField(studentData, ['Family name', 'اسم العائلة']) || '';
-            fullName = `${firstName} ${secondName} ${thirdName} ${familyName}`.replace(/\s+/g, ' ').trim();
+            // محاولة دمج الأسماء المجزأة
+            const firstName = autoMapField(studentData, ['First name', 'firstname', 'first', 'الاسم الأول', 'الاسم']) || '';
+            const secondName = autoMapField(studentData, ['Second name', 'secondname', 'second', 'اسم الأب', 'الأب']) || '';
+            const thirdName = autoMapField(studentData, ['Third name', 'thirdname', 'third', 'اسم الجد', 'الجد']) || '';
+            const familyName = autoMapField(studentData, ['Family name', 'familyname', 'family', 'last name', 'lastname', 'اسم العائلة', 'العائلة']) || '';
+            
+            if (firstName || secondName || thirdName || familyName) {
+              fullName = `${firstName} ${secondName} ${thirdName} ${familyName}`.replace(/\s+/g, ' ').trim();
+            }
+          }
+          
+          // إذا لم نجد الاسم بالطرق السابقة، استخدم الاستخراج الذكي
+          if (!fullName || fullName.length < 2) {
+            fullName = extractNames(studentData);
           }
 
           // التحقق من وجود بيانات أساسية فقط
